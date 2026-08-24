@@ -12,12 +12,15 @@ const PARTNERS_TABLE_ID = 'tblrU8nJU3Y69fyFb'
 const PARTNER_NAME_FIELD = 'Partner Organization'
 const TEXT_TABLE_ID = 'tblnEU2vHN6VUI75P'
 const TEXT_FIELDS = { name: 'Name', text: 'Text' }
+const META_TABLE_ID = 'tbl8blE4tIr2iGEOU'
+const META_FIELDS = { name: 'Name', introText: 'Intro Text', video: 'Video Overview' }
 
 const FIELDS = {
   topic: 'Topic',
-  category: 'Meta-Category',
+  categoryLink: 'Meta Category',
+  // Legacy single-select; used while sub-category rows are still being linked.
+  categoryFallback: 'Meta-Category',
   sortOrder: 'Sort Order',
-  videoGuide: 'Video Guide',
   stages: ['Planting Text', 'Seedling Text', 'Growing Text', 'Harvesting Text'],
 }
 
@@ -45,7 +48,7 @@ const toBullets = (text: string) =>
     .filter(Boolean)
 
 async function fetchAllRecords(token: string, tableId: string) {
-  const records: { fields: Record<string, unknown> }[] = []
+  const records: { id: string; fields: Record<string, unknown> }[] = []
   let offset: string | undefined
   do {
     const url = new URL(`https://api.airtable.com/v0/${BASE_ID}/${tableId}`)
@@ -91,14 +94,29 @@ Deno.serve(async (req) => {
         value: (r.fields[TEXT_FIELDS.text] as string).trim(),
       }))
 
+    // Meta Category records keyed by record id, for resolving linked records.
+    const metaRecords = await fetchAllRecords(airtableToken, META_TABLE_ID)
+    const metaById = new Map(
+      metaRecords
+        .filter((r) => r.fields[META_FIELDS.name])
+        .map((r) => [r.id, {
+          name: (r.fields[META_FIELDS.name] as string).trim(),
+          introText: (r.fields[META_FIELDS.introText] as string | undefined)?.trim() || null,
+          videoGuide: (r.fields[META_FIELDS.video] as string | undefined)?.trim() || null,
+        }]),
+    )
+    const metaByName = new Map([...metaById.values()].map((m) => [m.name, m]))
+
     const questions = records
       .filter((r) => r.fields[FIELDS.topic])
       .map((r) => ({
         id: slugify(r.fields[FIELDS.topic] as string),
         title: r.fields[FIELDS.topic] as string,
-        category: (r.fields[FIELDS.category] as string) ?? 'Uncategorized',
+        category:
+          metaById.get((r.fields[FIELDS.categoryLink] as string[] | undefined)?.[0] ?? '')?.name ??
+          (r.fields[FIELDS.categoryFallback] as string) ??
+          'Uncategorized',
         sortOrder: (r.fields[FIELDS.sortOrder] as number) ?? Number.MAX_SAFE_INTEGER,
-        videoGuide: (r.fields[FIELDS.videoGuide] as string | undefined)?.trim() || null,
         stageDescriptions: FIELDS.stages.map((f) => toBullets((r.fields[f] as string) ?? '')),
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -117,7 +135,13 @@ Deno.serve(async (req) => {
     if (del.error) throw del.error
 
     const catInsert = await admin.from('content_categories').insert(
-      categoryNames.map((name, position) => ({ id: slugify(name), name, position })),
+      categoryNames.map((name, position) => ({
+        id: slugify(name),
+        name,
+        position,
+        intro_text: metaByName.get(name)?.introText ?? null,
+        video_guide: metaByName.get(name)?.videoGuide ?? null,
+      })),
     )
     if (catInsert.error) throw catInsert.error
 
@@ -128,7 +152,6 @@ Deno.serve(async (req) => {
         title: q.title,
         position,
         stage_descriptions: q.stageDescriptions,
-        video_guide: q.videoGuide,
       })),
     )
     if (qInsert.error) throw qInsert.error

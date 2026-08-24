@@ -16,12 +16,15 @@ const PARTNERS_TABLE_ID = 'tblrU8nJU3Y69fyFb'
 const PARTNER_NAME_FIELD = 'Partner Organization'
 const TEXT_TABLE_ID = 'tblnEU2vHN6VUI75P'
 const TEXT_FIELDS = { name: 'Name', text: 'Text' }
+const META_TABLE_ID = 'tbl8blE4tIr2iGEOU'
+const META_FIELDS = { name: 'Name', introText: 'Intro Text', video: 'Video Overview' }
 
 const FIELDS = {
   topic: 'Topic',
-  category: 'Meta-Category',
+  categoryLink: 'Meta Category',
+  // Legacy single-select; used while sub-category rows are still being linked.
+  categoryFallback: 'Meta-Category',
   sortOrder: 'Sort Order',
-  videoGuide: 'Video Guide',
   stages: ['Planting Text', 'Seedling Text', 'Growing Text', 'Harvesting Text'],
 }
 
@@ -72,14 +75,29 @@ const texts = textRecords
   .filter((r) => r.fields[TEXT_FIELDS.name] && r.fields[TEXT_FIELDS.text])
   .map((r) => ({ key: slugify(r.fields[TEXT_FIELDS.name]), value: r.fields[TEXT_FIELDS.text].trim() }))
 
+// Meta Category records keyed by record id, for resolving linked records.
+const metaRecords = await fetchAllRecords(META_TABLE_ID)
+const metaById = new Map(
+  metaRecords
+    .filter((r) => r.fields[META_FIELDS.name])
+    .map((r) => [r.id, {
+      name: r.fields[META_FIELDS.name].trim(),
+      introText: r.fields[META_FIELDS.introText]?.trim() || null,
+      videoGuide: r.fields[META_FIELDS.video]?.trim() || null,
+    }]),
+)
+const metaByName = new Map([...metaById.values()].map((m) => [m.name, m]))
+
 const questions = records
   .filter((r) => r.fields[FIELDS.topic])
   .map((r) => ({
     id: slugify(r.fields[FIELDS.topic]),
     title: r.fields[FIELDS.topic],
-    category: r.fields[FIELDS.category] ?? 'Uncategorized',
+    category:
+      metaById.get(r.fields[FIELDS.categoryLink]?.[0])?.name ??
+      r.fields[FIELDS.categoryFallback] ??
+      'Uncategorized',
     sortOrder: r.fields[FIELDS.sortOrder] ?? Number.MAX_SAFE_INTEGER,
-    videoGuide: r.fields[FIELDS.videoGuide]?.trim() || null,
     stageDescriptions: FIELDS.stages.map((f) => toBullets(r.fields[f] ?? '')),
   }))
   .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -93,14 +111,16 @@ try {
   // Full replace: content is small and Airtable is the source of truth.
   await client.query('delete from content_categories')
   for (const [pos, name] of categoryNames.entries()) {
-    await client.query('insert into content_categories (id, name, position) values ($1, $2, $3)', [
-      slugify(name), name, pos,
-    ])
+    const meta = metaByName.get(name)
+    await client.query(
+      'insert into content_categories (id, name, position, intro_text, video_guide) values ($1, $2, $3, $4, $5)',
+      [slugify(name), name, pos, meta?.introText ?? null, meta?.videoGuide ?? null],
+    )
   }
   for (const [pos, q] of questions.entries()) {
     await client.query(
-      'insert into content_questions (id, category_id, title, position, stage_descriptions, video_guide) values ($1, $2, $3, $4, $5, $6)',
-      [q.id, slugify(q.category), q.title, pos, JSON.stringify(q.stageDescriptions), q.videoGuide],
+      'insert into content_questions (id, category_id, title, position, stage_descriptions) values ($1, $2, $3, $4, $5)',
+      [q.id, slugify(q.category), q.title, pos, JSON.stringify(q.stageDescriptions)],
     )
   }
   await client.query('delete from partner_organizations')
