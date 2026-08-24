@@ -10,11 +10,14 @@ const BASE_ID = 'apphdPdSXAihErhnR'
 const TABLE_ID = 'tbl1KOtdMe83SixVr'
 const PARTNERS_TABLE_ID = 'tblrU8nJU3Y69fyFb'
 const PARTNER_NAME_FIELD = 'Partner Organization'
+const TEXT_TABLE_ID = 'tblnEU2vHN6VUI75P'
+const TEXT_FIELDS = { name: 'Name', text: 'Text' }
 
 const FIELDS = {
   topic: 'Topic',
   category: 'Meta-Category',
   sortOrder: 'Sort Order',
+  videoGuide: 'Video Guide',
   stages: ['Planting Text', 'Seedling Text', 'Growing Text', 'Harvesting Text'],
 }
 
@@ -80,6 +83,14 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b))
 
+    const textRecords = await fetchAllRecords(airtableToken, TEXT_TABLE_ID)
+    const texts = textRecords
+      .filter((r) => r.fields[TEXT_FIELDS.name] && r.fields[TEXT_FIELDS.text])
+      .map((r) => ({
+        key: slugify(r.fields[TEXT_FIELDS.name] as string),
+        value: (r.fields[TEXT_FIELDS.text] as string).trim(),
+      }))
+
     const questions = records
       .filter((r) => r.fields[FIELDS.topic])
       .map((r) => ({
@@ -87,6 +98,7 @@ Deno.serve(async (req) => {
         title: r.fields[FIELDS.topic] as string,
         category: (r.fields[FIELDS.category] as string) ?? 'Uncategorized',
         sortOrder: (r.fields[FIELDS.sortOrder] as number) ?? Number.MAX_SAFE_INTEGER,
+        videoGuide: (r.fields[FIELDS.videoGuide] as string | undefined)?.trim() || null,
         stageDescriptions: FIELDS.stages.map((f) => toBullets((r.fields[f] as string) ?? '')),
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -116,6 +128,7 @@ Deno.serve(async (req) => {
         title: q.title,
         position,
         stage_descriptions: q.stageDescriptions,
+        video_guide: q.videoGuide,
       })),
     )
     if (qInsert.error) throw qInsert.error
@@ -127,7 +140,14 @@ Deno.serve(async (req) => {
     )
     if (pInsert.error) throw pInsert.error
 
-    return json({ ok: true, categories: categoryNames.length, questions: questions.length, partners: partners.length })
+    const tDel = await admin.from('content_text').delete().neq('key', '')
+    if (tDel.error) throw tDel.error
+    if (texts.length > 0) {
+      const tInsert = await admin.from('content_text').insert(texts)
+      if (tInsert.error) throw tInsert.error
+    }
+
+    return json({ ok: true, categories: categoryNames.length, questions: questions.length, partners: partners.length, texts: texts.length })
   } catch (err) {
     console.error(err)
     return json({ error: err instanceof Error ? err.message : String(err) }, 500)

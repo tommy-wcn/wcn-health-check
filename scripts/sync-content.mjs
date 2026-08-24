@@ -14,11 +14,14 @@ const BASE_ID = 'apphdPdSXAihErhnR'
 const TABLE_ID = 'tbl1KOtdMe83SixVr'
 const PARTNERS_TABLE_ID = 'tblrU8nJU3Y69fyFb'
 const PARTNER_NAME_FIELD = 'Partner Organization'
+const TEXT_TABLE_ID = 'tblnEU2vHN6VUI75P'
+const TEXT_FIELDS = { name: 'Name', text: 'Text' }
 
 const FIELDS = {
   topic: 'Topic',
   category: 'Meta-Category',
   sortOrder: 'Sort Order',
+  videoGuide: 'Video Guide',
   stages: ['Planting Text', 'Seedling Text', 'Growing Text', 'Harvesting Text'],
 }
 
@@ -64,6 +67,11 @@ const partners = partnerRecords
   .filter(Boolean)
   .sort((a, b) => a.localeCompare(b))
 
+const textRecords = await fetchAllRecords(TEXT_TABLE_ID)
+const texts = textRecords
+  .filter((r) => r.fields[TEXT_FIELDS.name] && r.fields[TEXT_FIELDS.text])
+  .map((r) => ({ key: slugify(r.fields[TEXT_FIELDS.name]), value: r.fields[TEXT_FIELDS.text].trim() }))
+
 const questions = records
   .filter((r) => r.fields[FIELDS.topic])
   .map((r) => ({
@@ -71,6 +79,7 @@ const questions = records
     title: r.fields[FIELDS.topic],
     category: r.fields[FIELDS.category] ?? 'Uncategorized',
     sortOrder: r.fields[FIELDS.sortOrder] ?? Number.MAX_SAFE_INTEGER,
+    videoGuide: r.fields[FIELDS.videoGuide]?.trim() || null,
     stageDescriptions: FIELDS.stages.map((f) => toBullets(r.fields[f] ?? '')),
   }))
   .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -90,8 +99,8 @@ try {
   }
   for (const [pos, q] of questions.entries()) {
     await client.query(
-      'insert into content_questions (id, category_id, title, position, stage_descriptions) values ($1, $2, $3, $4, $5)',
-      [q.id, slugify(q.category), q.title, pos, JSON.stringify(q.stageDescriptions)],
+      'insert into content_questions (id, category_id, title, position, stage_descriptions, video_guide) values ($1, $2, $3, $4, $5, $6)',
+      [q.id, slugify(q.category), q.title, pos, JSON.stringify(q.stageDescriptions), q.videoGuide],
     )
   }
   await client.query('delete from partner_organizations')
@@ -100,6 +109,10 @@ try {
       slugify(name), name, pos,
     ])
   }
+  await client.query('delete from content_text')
+  for (const t of texts) {
+    await client.query('insert into content_text (key, value) values ($1, $2)', [t.key, t.value])
+  }
   await client.query('commit')
 } catch (err) {
   await client.query('rollback')
@@ -107,4 +120,4 @@ try {
 } finally {
   await client.end()
 }
-console.log(`Synced ${questions.length} questions in ${categoryNames.length} categories and ${partners.length} partner organizations to Supabase`)
+console.log(`Synced ${questions.length} questions in ${categoryNames.length} categories, ${partners.length} partner organizations, and ${texts.length} text entries to Supabase`)
