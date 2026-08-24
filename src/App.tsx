@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GrowingTree } from './GrowingTree'
 import { translations, languages, type Language } from './i18n'
-import { loadContent, plantIcon, type Category } from './data/content'
+import { loadContent, loadPartnerOrgs, plantIcon, type Category } from './data/content'
 import { supabase } from './lib/supabase'
 
 const stageStyles = [
@@ -18,19 +18,28 @@ function App() {
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<Language>('en')
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
-  const [orgName, setOrgName] = useState('')
   const [submitState, setSubmitState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
   const [content, setContent] = useState<Category[] | null>(null)
+  const [partnerOrgs, setPartnerOrgs] = useState<string[]>([])
   const [contentError, setContentError] = useState(false)
+  const [respondent, setRespondent] = useState<{ name: string; email: string; org: string } | null>(null)
+  const [formName, setFormName] = useState('')
+  const [formEmail, setFormEmail] = useState('')
+  const [formOrg, setFormOrg] = useState('')
 
   useEffect(() => {
-    loadContent()
-      .then(setContent)
+    Promise.all([loadContent(), loadPartnerOrgs()])
+      .then(([cats, orgs]) => {
+        setContent(cats)
+        setPartnerOrgs(orgs)
+      })
       .catch((err) => {
         console.error(err)
         setContentError(true)
       })
   }, [])
+
+  const formValid = formName.trim() && /.+@.+\..+/.test(formEmail.trim()) && formOrg
 
   const t = translations[lang]
 
@@ -64,11 +73,18 @@ function App() {
   }
 
   const handleSubmit = async () => {
+    if (!respondent) return
     setSubmitState('saving')
     const submissionId = crypto.randomUUID()
     const { error: submissionError } = await supabase
       .from('submissions')
-      .insert({ id: submissionId, org_name: orgName.trim(), language: lang })
+      .insert({
+        id: submissionId,
+        org_name: respondent.org,
+        respondent_name: respondent.name,
+        respondent_email: respondent.email,
+        language: lang,
+      })
     if (submissionError) {
       console.error(submissionError)
       setSubmitState('error')
@@ -127,6 +143,7 @@ function App() {
           <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight mb-2">
             {t.title} <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">{t.subtitle}</span>
           </h1>
+          {respondent && (<>
           <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mb-3">
             <span>{t.overall}: {overallProgress}% ({totalAnswered}/{TOTAL_QUESTIONS})</span>
             <div className="w-32 h-1.5 rounded-full bg-slate-800 overflow-hidden">
@@ -146,8 +163,67 @@ function App() {
               )
             })}
           </div>
+          </>)}
         </div>
 
+        {!respondent && (
+        /* Welcome landing */
+        <div className="max-w-xl mx-auto mt-6">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50">
+            <div className="text-center mb-6">
+              <div className="text-4xl mb-3" aria-hidden="true">🌱</div>
+              <h2 className="text-2xl font-bold text-white mb-2">Welcome</h2>
+              <p className="text-slate-400 text-sm">
+                This health check helps your organization reflect on its maturity across {CATEGORIES.length} key
+                dimensions. Tell us who you are to get started — responses are shared only with WCN staff.
+              </p>
+            </div>
+            <label htmlFor="welcome-name" className="block text-xs text-slate-400 mb-1">Your name</label>
+            <input
+              id="welcome-name"
+              type="text"
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              maxLength={200}
+              className="w-full mb-3 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-sm"
+            />
+            <label htmlFor="welcome-email" className="block text-xs text-slate-400 mb-1">Email</label>
+            <input
+              id="welcome-email"
+              type="email"
+              value={formEmail}
+              onChange={(e) => setFormEmail(e.target.value)}
+              maxLength={320}
+              className="w-full mb-3 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-sm"
+            />
+            <label htmlFor="welcome-org" className="block text-xs text-slate-400 mb-1">Organization</label>
+            <select
+              id="welcome-org"
+              value={formOrg}
+              onChange={(e) => setFormOrg(e.target.value)}
+              className="w-full mb-5 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-sm"
+            >
+              <option value="" disabled>Select your organization…</option>
+              {partnerOrgs.map((org) => (
+                <option key={org} value={org}>{org}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setRespondent({ name: formName.trim(), email: formEmail.trim(), org: formOrg })}
+              disabled={!formValid}
+              className={`w-full py-2.5 rounded-xl text-sm font-medium transition-all ${
+                formValid
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-[1.02]'
+                  : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
+              }`}
+            >
+              Start the health check →
+            </button>
+          </div>
+        </div>
+        )}
+
+        {respondent && (<>
         {/* Category */}
         <div className="max-w-5xl mx-auto">
           <div className="bg-slate-900/60 backdrop-blur-xl rounded-t-2xl p-4 border border-slate-700/50 border-b-0">
@@ -243,29 +319,21 @@ function App() {
               <div className="text-center py-2">
                 <div className="text-3xl mb-2">🌳</div>
                 <p className="text-emerald-400 font-semibold">Thank you! Your health check has been submitted.</p>
-                <p className="text-slate-400 text-sm mt-1">{orgName.trim()} — {totalAnswered}/{TOTAL_QUESTIONS} questions answered</p>
+                <p className="text-slate-400 text-sm mt-1">{respondent.org} — {totalAnswered}/{TOTAL_QUESTIONS} questions answered</p>
               </div>
             ) : (
               <div className="flex flex-col md:flex-row md:items-center gap-3">
-                <div className="flex-1">
-                  <label htmlFor="org-name" className="block text-xs text-slate-400 mb-1">Organization name</label>
-                  <input
-                    id="org-name"
-                    type="text"
-                    value={orgName}
-                    onChange={(e) => setOrgName(e.target.value)}
-                    maxLength={200}
-                    placeholder="Your organization…"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-sm"
-                  />
+                <div className="flex-1 text-sm text-slate-400">
+                  Submitting as <span className="text-white">{respondent.name}</span> ({respondent.email}) —{' '}
+                  <span className="text-white">{respondent.org}</span>
                 </div>
-                <div className="md:self-end flex items-center gap-3">
+                <div className="flex items-center gap-3">
                   {submitState === 'error' && <span className="text-red-400 text-xs">Something went wrong — please try again.</span>}
                   <button
                     onClick={handleSubmit}
-                    disabled={submitState === 'saving' || totalAnswered === 0 || !orgName.trim()}
+                    disabled={submitState === 'saving' || totalAnswered === 0}
                     className={`px-6 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                      submitState !== 'saving' && totalAnswered > 0 && orgName.trim()
+                      submitState !== 'saving' && totalAnswered > 0
                         ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'
                         : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
                     }`}
@@ -277,6 +345,7 @@ function App() {
             )}
           </div>
         </div>
+        </>)}
 
         <div className="max-w-5xl mx-auto mt-6 text-center">
           <p className="text-slate-600 text-sm">{t.footer}</p>

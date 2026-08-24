@@ -14,12 +14,23 @@ interface CategoryMeta {
   name: string
   fullName: string
   icon: string
-  questionIds: Set<string>
+  questions: { id: string; title: string }[]
 }
+
+interface Answer {
+  submission_id: string
+  question_id: string
+  level: number
+  note: string | null
+}
+
+const STAGE_NAMES = ['Planting', 'Seedling', 'Growing', 'Harvesting']
 
 interface Response {
   id: string
   org: string
+  respondentName: string | null
+  respondentEmail: string | null
   language: string
   date: string
   createdAt: string
@@ -30,19 +41,20 @@ interface Response {
 
 function scoreResponses(
   categories: CategoryMeta[],
-  submissions: { id: string; org_name: string; language: string; created_at: string }[],
-  answers: { submission_id: string; question_id: string; level: number }[],
+  submissions: { id: string; org_name: string; respondent_name: string | null; respondent_email: string | null; language: string; created_at: string }[],
+  answers: Answer[],
 ): Response[] {
-  const bySubmission = new Map<string, { question_id: string; level: number }[]>()
+  const bySubmission = new Map<string, Answer[]>()
   for (const a of answers) {
     const list = bySubmission.get(a.submission_id) ?? []
     list.push(a)
     bySubmission.set(a.submission_id, list)
   }
+  const questionIdsByCategory = new Map(categories.map((c) => [c.id, new Set(c.questions.map((q) => q.id))]))
   return submissions.map((s) => {
     const rows = bySubmission.get(s.id) ?? []
     const scores = categories.map((cat) => {
-      const catRows = rows.filter((r) => cat.questionIds.has(r.question_id))
+      const catRows = rows.filter((r) => questionIdsByCategory.get(cat.id)!.has(r.question_id))
       if (catRows.length === 0) return null
       return Math.round((catRows.reduce((sum, r) => sum + r.level, 0) / (catRows.length * 4)) * 100)
     })
@@ -50,6 +62,8 @@ function scoreResponses(
     return {
       id: s.id,
       org: s.org_name,
+      respondentName: s.respondent_name,
+      respondentEmail: s.respondent_email,
       language: s.language,
       date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       createdAt: s.created_at,
@@ -103,6 +117,7 @@ function AdminDashboard() {
   const [session, setSession] = useState<Session | null>(null)
   const [authReady, setAuthReady] = useState(false)
   const [categories, setCategories] = useState<CategoryMeta[] | null>(null)
+  const [answers, setAnswers] = useState<Answer[]>([])
   const [responses, setResponses] = useState<Response[] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedResponse, setSelectedResponse] = useState<string | null>(null)
@@ -136,8 +151,8 @@ function AdminDashboard() {
     ;(async () => {
       const [content, subs, ans] = await Promise.all([
         loadContent(),
-        supabase.from('submissions').select('id, org_name, language, created_at').order('created_at', { ascending: false }),
-        supabase.from('answers').select('submission_id, question_id, level'),
+        supabase.from('submissions').select('id, org_name, respondent_name, respondent_email, language, created_at').order('created_at', { ascending: false }),
+        supabase.from('answers').select('submission_id, question_id, level, note'),
       ]).catch((err) => {
         throw new Error(err.message ?? String(err))
       })
@@ -151,9 +166,10 @@ function AdminDashboard() {
         name: c.name.split(' ')[0],
         fullName: c.name,
         icon: c.icon,
-        questionIds: new Set(c.questions.map((q) => q.id)),
+        questions: c.questions.map((q) => ({ id: q.id, title: q.title })),
       }))
       setCategories(cats)
+      setAnswers(ans.data)
       setResponses(scoreResponses(cats, subs.data, ans.data))
     })().catch((err) => {
       if (!cancelled) setLoadError(err.message)
@@ -401,6 +417,12 @@ function AdminDashboard() {
                     <div>
                       <h2 className="text-2xl font-bold text-white">{selectedOrg.org}</h2>
                       <p className="text-slate-400">{languageName(selectedOrg.language)} • Submitted {selectedOrg.date}</p>
+                      {selectedOrg.respondentName && (
+                        <p className="text-slate-500 text-sm mt-0.5">
+                          Completed by {selectedOrg.respondentName}
+                          {selectedOrg.respondentEmail && <> · <a className="hover:text-slate-300 underline" href={`mailto:${selectedOrg.respondentEmail}`}>{selectedOrg.respondentEmail}</a></>}
+                        </p>
+                      )}
                     </div>
                     <div className="text-right">
                       <div className="text-4xl font-bold text-emerald-400">{selectedOrg.overall}%</div>
@@ -444,6 +466,43 @@ function AdminDashboard() {
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  {/* Individual Answers */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold text-white mb-3">Answers</h3>
+                    <div className="space-y-4">
+                      {categories.map((cat) => {
+                        const catAnswers = cat.questions
+                          .map((q) => ({ question: q, answer: answers.find((a) => a.submission_id === selectedOrg.id && a.question_id === q.id) }))
+                          .filter((row) => row.answer)
+                        if (catAnswers.length === 0) return null
+                        return (
+                          <div key={cat.id}>
+                            <div className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">
+                              {cat.icon} {cat.fullName}
+                            </div>
+                            <div className="space-y-1.5">
+                              {catAnswers.map(({ question, answer }) => (
+                                <div key={question.id} className="bg-slate-800/50 rounded-lg px-3 py-2">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-sm text-white">{question.title}</span>
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
+                                      answer!.level >= 4 ? 'bg-cyan-500/10 text-cyan-400' : answer!.level >= 3 ? 'bg-emerald-500/10 text-emerald-400' : answer!.level >= 2 ? 'bg-amber-500/10 text-amber-400' : 'bg-red-500/10 text-red-400'
+                                    }`}>
+                                      {STAGE_NAMES[answer!.level - 1]}
+                                    </span>
+                                  </div>
+                                  {answer!.note && (
+                                    <p className="text-xs text-slate-400 italic mt-1 border-l-2 border-slate-600 pl-2">{answer!.note}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (

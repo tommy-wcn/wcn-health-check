@@ -8,6 +8,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const BASE_ID = 'apphdPdSXAihErhnR'
 const TABLE_ID = 'tbl1KOtdMe83SixVr'
+const PARTNERS_TABLE_ID = 'tblrU8nJU3Y69fyFb'
+const PARTNER_NAME_FIELD = 'Partner Organization'
 
 const FIELDS = {
   topic: 'Topic',
@@ -39,11 +41,11 @@ const toBullets = (text: string) =>
     .map((b) => b.trim())
     .filter(Boolean)
 
-async function fetchAllRecords(token: string) {
+async function fetchAllRecords(token: string, tableId: string) {
   const records: { fields: Record<string, unknown> }[] = []
   let offset: string | undefined
   do {
-    const url = new URL(`https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`)
+    const url = new URL(`https://api.airtable.com/v0/${BASE_ID}/${tableId}`)
     if (offset) url.searchParams.set('offset', offset)
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     if (!res.ok) throw new Error(`Airtable API ${res.status}: ${await res.text()}`)
@@ -70,7 +72,13 @@ Deno.serve(async (req) => {
   if (!airtableToken) return json({ error: 'AIRTABLE_TOKEN secret is not configured' }, 500)
 
   try {
-    const records = await fetchAllRecords(airtableToken)
+    const records = await fetchAllRecords(airtableToken, TABLE_ID)
+    const partnerRecords = await fetchAllRecords(airtableToken, PARTNERS_TABLE_ID)
+
+    const partners = partnerRecords
+      .map((r) => r.fields[PARTNER_NAME_FIELD] as string)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
 
     const questions = records
       .filter((r) => r.fields[FIELDS.topic])
@@ -112,7 +120,14 @@ Deno.serve(async (req) => {
     )
     if (qInsert.error) throw qInsert.error
 
-    return json({ ok: true, categories: categoryNames.length, questions: questions.length })
+    const pDel = await admin.from('partner_organizations').delete().neq('id', '')
+    if (pDel.error) throw pDel.error
+    const pInsert = await admin.from('partner_organizations').insert(
+      partners.map((name, position) => ({ id: slugify(name), name, position })),
+    )
+    if (pInsert.error) throw pInsert.error
+
+    return json({ ok: true, categories: categoryNames.length, questions: questions.length, partners: partners.length })
   } catch (err) {
     console.error(err)
     return json({ error: err instanceof Error ? err.message : String(err) }, 500)

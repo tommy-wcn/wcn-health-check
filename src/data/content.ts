@@ -51,3 +51,13 @@ export async function loadContent(): Promise<Category[]> {
 
 export const plantIcon = (questionIndex: number): string =>
   PLANT_ICON_POOL[questionIndex % PLANT_ICON_POOL.length]
+
+/** Partner organizations for the welcome page dropdown, synced from Airtable. */
+export async function loadPartnerOrgs(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('partner_organizations')
+    .select('name')
+    .order('position')
+  if (error) throw error
+  return data.map((r) => r.name)
+}
