@@ -1,80 +1,208 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   PieChart, Pie, Cell, Legend, LineChart, Line
 } from 'recharts'
+import { supabase } from './lib/supabase'
+import { loadContent } from './data/content'
+import { languages } from './i18n'
 
-// Category definitions (same as main app)
-const categories = [
-  { id: 1, name: 'Registration & Governance', icon: '⚖️', questions: 5 },
-  { id: 2, name: 'Human Resources', icon: '👥', questions: 6 },
-  { id: 3, name: 'Strategic Planning', icon: '📋', questions: 4 },
-  { id: 4, name: 'Finance & Accounting', icon: '💰', questions: 4 },
-  { id: 5, name: 'Commitment to People', icon: '🌍', questions: 5 },
-  { id: 6, name: 'Infrastructure', icon: '🏗️', questions: 4 },
-  { id: 7, name: 'Donor Engagement', icon: '🤝', questions: 4 },
-  { id: 8, name: 'External Comms', icon: '📢', questions: 4 },
-]
+interface CategoryMeta {
+  id: string
+  name: string
+  fullName: string
+  icon: string
+  questionIds: Set<string>
+}
 
-// Mock response data - 12 organizations
-const mockResponses = [
-  { id: 1, org: 'Wildlife Conservation Kenya', country: 'Kenya', date: '2026-03-15', scores: [72, 58, 81, 65, 90, 55, 70, 62] },
-  { id: 2, org: 'Amazon Rainforest Alliance', country: 'Brazil', date: '2026-03-14', scores: [85, 78, 92, 88, 75, 82, 90, 85] },
-  { id: 3, org: 'Coral Reef Foundation', country: 'Indonesia', date: '2026-03-14', scores: [60, 45, 55, 70, 65, 40, 50, 55] },
-  { id: 4, org: 'Mountain Tiger Initiative', country: 'Nepal', date: '2026-03-13', scores: [78, 82, 75, 68, 85, 72, 65, 70] },
-  { id: 5, org: 'Sahara Green Project', country: 'Mali', date: '2026-03-12', scores: [45, 38, 50, 42, 55, 35, 40, 45] },
-  { id: 6, org: 'Arctic Wildlife Trust', country: 'Norway', date: '2026-03-11', scores: [92, 88, 95, 90, 85, 88, 92, 90] },
-  { id: 7, org: 'River Basin Conservation', country: 'Uganda', date: '2026-03-10', scores: [68, 62, 70, 58, 75, 60, 55, 65] },
-  { id: 8, org: 'Forest Guardians Network', country: 'Philippines', date: '2026-03-09', scores: [55, 50, 62, 48, 58, 45, 52, 50] },
-  { id: 9, org: 'Wetlands Protection Fund', country: 'Tanzania', date: '2026-03-08', scores: [75, 70, 78, 72, 80, 68, 72, 75] },
-  { id: 10, org: 'Savanna Wildlife Alliance', country: 'Botswana', date: '2026-03-07', scores: [82, 75, 85, 78, 88, 72, 80, 78] },
-  { id: 11, org: 'Coastal Conservation Initiative', country: 'Madagascar', date: '2026-03-06', scores: [50, 42, 48, 55, 60, 38, 45, 42] },
-  { id: 12, org: 'Highland Ecosystem Trust', country: 'Rwanda', date: '2026-03-05', scores: [70, 65, 72, 68, 78, 62, 68, 70] },
-]
+interface Response {
+  id: string
+  org: string
+  language: string
+  date: string
+  createdAt: string
+  /** Per-category score 0-100, in CATEGORIES order; null if no answers in that category */
+  scores: (number | null)[]
+  overall: number
+}
 
-// const COLORS = ['#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b']
+function scoreResponses(
+  categories: CategoryMeta[],
+  submissions: { id: string; org_name: string; language: string; created_at: string }[],
+  answers: { submission_id: string; question_id: string; level: number }[],
+): Response[] {
+  const bySubmission = new Map<string, { question_id: string; level: number }[]>()
+  for (const a of answers) {
+    const list = bySubmission.get(a.submission_id) ?? []
+    list.push(a)
+    bySubmission.set(a.submission_id, list)
+  }
+  return submissions.map((s) => {
+    const rows = bySubmission.get(s.id) ?? []
+    const scores = categories.map((cat) => {
+      const catRows = rows.filter((r) => cat.questionIds.has(r.question_id))
+      if (catRows.length === 0) return null
+      return Math.round((catRows.reduce((sum, r) => sum + r.level, 0) / (catRows.length * 4)) * 100)
+    })
+    const answered = scores.filter((v): v is number => v !== null)
+    return {
+      id: s.id,
+      org: s.org_name,
+      language: s.language,
+      date: new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      createdAt: s.created_at,
+      scores,
+      overall: answered.length ? Math.round(answered.reduce((a, b) => a + b, 0) / answered.length) : 0,
+    }
+  })
+}
+
+function Login() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const signIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) setError(error.message)
+    setBusy(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4">
+      <form onSubmit={signIn} className="w-full max-w-sm bg-slate-900/60 rounded-2xl p-6 border border-slate-700/50 backdrop-blur-xl">
+        <div className="text-center mb-6">
+          <div className="text-3xl mb-2">🔐</div>
+          <h1 className="text-xl font-bold text-white">WCN Staff Sign-In</h1>
+          <p className="text-slate-400 text-sm mt-1">Admin access to health check responses</p>
+        </div>
+        <label className="block text-xs text-slate-400 mb-1" htmlFor="email">Email</label>
+        <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-3 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-sm" />
+        <label className="block text-xs text-slate-400 mb-1" htmlFor="password">Password</label>
+        <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-4 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 text-white focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-sm" />
+        {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
+        <button type="submit" disabled={busy}
+          className="w-full py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-[1.02] transition-all disabled:opacity-50">
+          {busy ? 'Signing in…' : 'Sign in'}
+        </button>
+        <a href="/" className="block text-center text-slate-500 text-xs mt-4 hover:text-slate-300">← Back to health check</a>
+      </form>
+    </div>
+  )
+}
 
 function AdminDashboard() {
-  const [selectedResponse, setSelectedResponse] = useState<number | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [authReady, setAuthReady] = useState(false)
+  const [categories, setCategories] = useState<CategoryMeta[] | null>(null)
+  const [responses, setResponses] = useState<Response[] | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [selectedResponse, setSelectedResponse] = useState<string | null>(null)
   const [view, setView] = useState<'overview' | 'responses' | 'trends'>('overview')
+  const [syncState, setSyncState] = useState<{ status: 'idle' | 'syncing' | 'done' | 'error'; message?: string }>({ status: 'idle' })
 
-  // Calculate stats
-  const totalResponses = mockResponses.length
-  const avgOverall = Math.round(mockResponses.reduce((sum, r) => sum + r.scores.reduce((a, b) => a + b, 0) / r.scores.length, 0) / totalResponses)
-  
-  // Category averages across all responses
-  const categoryAverages = categories.map((cat, idx) => ({
-    name: cat.name.split(' ')[0], // Short name
-    fullName: cat.name,
-    icon: cat.icon,
-    avg: Math.round(mockResponses.reduce((sum, r) => sum + r.scores[idx], 0) / totalResponses),
-  }))
+  const syncFromAirtable = async () => {
+    setSyncState({ status: 'syncing' })
+    const { data, error } = await supabase.functions.invoke('sync-airtable')
+    if (error || data?.error) {
+      setSyncState({ status: 'error', message: error?.message ?? data.error })
+      return
+    }
+    setSyncState({ status: 'done', message: `${data.questions} questions in ${data.categories} categories` })
+    // Reload so the refreshed content flows through scoring and charts
+    window.location.reload()
+  }
 
-  // Score distribution (how many orgs in each tier)
-  const scoreDistribution = [
-    { name: 'Emerging (0-40%)', value: mockResponses.filter(r => r.scores.reduce((a, b) => a + b, 0) / r.scores.length < 40).length, color: '#ef4444' },
-    { name: 'Developing (40-60%)', value: mockResponses.filter(r => { const avg = r.scores.reduce((a, b) => a + b, 0) / r.scores.length; return avg >= 40 && avg < 60 }).length, color: '#f59e0b' },
-    { name: 'Established (60-80%)', value: mockResponses.filter(r => { const avg = r.scores.reduce((a, b) => a + b, 0) / r.scores.length; return avg >= 60 && avg < 80 }).length, color: '#10b981' },
-    { name: 'Leading (80-100%)', value: mockResponses.filter(r => r.scores.reduce((a, b) => a + b, 0) / r.scores.length >= 80).length, color: '#06b6d4' },
-  ]
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session)
+      setAuthReady(true)
+    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s))
+    return () => sub.subscription.unsubscribe()
+  }, [])
 
-  // Trend data (last 7 days)
-  const trendData = [
-    { date: 'Mar 5', responses: 1, avgScore: 70 },
-    { date: 'Mar 6', responses: 1, avgScore: 48 },
-    { date: 'Mar 7', responses: 1, avgScore: 80 },
-    { date: 'Mar 8', responses: 1, avgScore: 74 },
-    { date: 'Mar 9', responses: 1, avgScore: 53 },
-    { date: 'Mar 10', responses: 1, avgScore: 64 },
-    { date: 'Mar 11', responses: 1, avgScore: 90 },
-    { date: 'Mar 12', responses: 1, avgScore: 44 },
-    { date: 'Mar 13', responses: 1, avgScore: 75 },
-    { date: 'Mar 14', responses: 2, avgScore: 66 },
-    { date: 'Mar 15', responses: 1, avgScore: 69 },
-  ]
+  useEffect(() => {
+    if (!session) return
+    let cancelled = false
+    ;(async () => {
+      const [content, subs, ans] = await Promise.all([
+        loadContent(),
+        supabase.from('submissions').select('id, org_name, language, created_at').order('created_at', { ascending: false }),
+        supabase.from('answers').select('submission_id, question_id, level'),
+      ]).catch((err) => {
+        throw new Error(err.message ?? String(err))
+      })
+      if (cancelled) return
+      if (subs.error || ans.error) {
+        setLoadError((subs.error ?? ans.error)!.message)
+        return
+      }
+      const cats = content.map((c) => ({
+        id: c.id,
+        name: c.name.split(' ')[0],
+        fullName: c.name,
+        icon: c.icon,
+        questionIds: new Set(c.questions.map((q) => q.id)),
+      }))
+      setCategories(cats)
+      setResponses(scoreResponses(cats, subs.data, ans.data))
+    })().catch((err) => {
+      if (!cancelled) setLoadError(err.message)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [session])
 
-  const selectedOrg = selectedResponse !== null ? mockResponses.find(r => r.id === selectedResponse) : null
+  const stats = useMemo(() => {
+    if (!responses || responses.length === 0 || !categories) return null
+    const totalResponses = responses.length
+    const avgOverall = Math.round(responses.reduce((sum, r) => sum + r.overall, 0) / totalResponses)
+    const categoryAverages = categories.map((cat, idx) => {
+      const vals = responses.map((r) => r.scores[idx]).filter((v): v is number => v !== null)
+      return {
+        name: cat.name,
+        fullName: cat.fullName,
+        icon: cat.icon,
+        avg: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0,
+      }
+    })
+    const scoreDistribution = [
+      { name: 'Emerging (0-40%)', value: responses.filter((r) => r.overall < 40).length, color: '#ef4444' },
+      { name: 'Developing (40-60%)', value: responses.filter((r) => r.overall >= 40 && r.overall < 60).length, color: '#f59e0b' },
+      { name: 'Established (60-80%)', value: responses.filter((r) => r.overall >= 60 && r.overall < 80).length, color: '#10b981' },
+      { name: 'Leading (80-100%)', value: responses.filter((r) => r.overall >= 80).length, color: '#06b6d4' },
+    ]
+    const byDate = new Map<string, { responses: number; totalScore: number }>()
+    for (const r of [...responses].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+      const day = new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const entry = byDate.get(day) ?? { responses: 0, totalScore: 0 }
+      entry.responses += 1
+      entry.totalScore += r.overall
+      byDate.set(day, entry)
+    }
+    const trendData = [...byDate.entries()].map(([date, e]) => ({
+      date,
+      responses: e.responses,
+      avgScore: Math.round(e.totalScore / e.responses),
+    }))
+    return { totalResponses, avgOverall, categoryAverages, scoreDistribution, trendData }
+  }, [responses, categories])
+
+  if (!authReady) return null
+  if (!session) return <Login />
+
+  const selectedOrg = selectedResponse !== null ? responses?.find((r) => r.id === selectedResponse) : null
+  const languageName = (code: string) => languages.find((l) => l.code === code)?.name ?? code
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -87,7 +215,7 @@ function AdminDashboard() {
               <div className="h-6 w-px bg-slate-700"></div>
               <h1 className="text-xl font-bold text-white">Admin Dashboard</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               {(['overview', 'responses', 'trends'] as const).map((v) => (
                 <button
                   key={v}
@@ -101,33 +229,68 @@ function AdminDashboard() {
                   {v.charAt(0).toUpperCase() + v.slice(1)}
                 </button>
               ))}
+              <button
+                onClick={syncFromAirtable}
+                disabled={syncState.status === 'syncing'}
+                title={syncState.status === 'error' ? syncState.message : 'Pull the latest questions and rubric text from Airtable'}
+                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                  syncState.status === 'error'
+                    ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                    : 'bg-slate-800/60 text-slate-400 hover:bg-slate-700/60 border-slate-700/50'
+                } disabled:opacity-60`}
+              >
+                {syncState.status === 'syncing' ? 'Syncing…' : syncState.status === 'error' ? 'Sync failed — retry' : '⟳ Sync from Airtable'}
+              </button>
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-slate-800/60 text-slate-400 hover:bg-slate-700/60 border border-slate-700/50 transition-all"
+                title={session.user.email}
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {view === 'overview' && (
+        {loadError && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm mb-6">
+            Failed to load responses: {loadError}
+          </div>
+        )}
+        {!loadError && responses === null && (
+          <div className="text-center text-slate-400 py-20">Loading responses…</div>
+        )}
+        {responses !== null && !stats && (
+          <div className="text-center text-slate-400 py-20">
+            <div className="text-4xl mb-3">🌱</div>
+            <p className="font-medium text-white">No submissions yet</p>
+            <p className="text-sm mt-1">Responses will appear here as organizations complete the health check.</p>
+          </div>
+        )}
+
+        {stats && view === 'overview' && (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
-                <div className="text-3xl font-bold text-white">{totalResponses}</div>
+                <div className="text-3xl font-bold text-white">{stats.totalResponses}</div>
                 <div className="text-sm text-slate-400">Total Responses</div>
               </div>
               <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
-                <div className="text-3xl font-bold text-emerald-400">{avgOverall}%</div>
+                <div className="text-3xl font-bold text-emerald-400">{stats.avgOverall}%</div>
                 <div className="text-sm text-slate-400">Average Score</div>
               </div>
               <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
-                <div className="text-3xl font-bold text-cyan-400">{categoryAverages.reduce((max, c) => c.avg > max.avg ? c : max).icon}</div>
+                <div className="text-3xl font-bold text-cyan-400">{stats.categoryAverages.reduce((max, c) => c.avg > max.avg ? c : max).icon}</div>
                 <div className="text-sm text-slate-400">Strongest Category</div>
-                <div className="text-xs text-cyan-400">{categoryAverages.reduce((max, c) => c.avg > max.avg ? c : max).fullName}</div>
+                <div className="text-xs text-cyan-400">{stats.categoryAverages.reduce((max, c) => c.avg > max.avg ? c : max).fullName}</div>
               </div>
               <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
-                <div className="text-3xl font-bold text-amber-400">{categoryAverages.reduce((min, c) => c.avg < min.avg ? c : min).icon}</div>
+                <div className="text-3xl font-bold text-amber-400">{stats.categoryAverages.reduce((min, c) => c.avg < min.avg ? c : min).icon}</div>
                 <div className="text-sm text-slate-400">Needs Attention</div>
-                <div className="text-xs text-amber-400">{categoryAverages.reduce((min, c) => c.avg < min.avg ? c : min).fullName}</div>
+                <div className="text-xs text-amber-400">{stats.categoryAverages.reduce((min, c) => c.avg < min.avg ? c : min).fullName}</div>
               </div>
             </div>
 
@@ -137,7 +300,7 @@ function AdminDashboard() {
               <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
                 <h3 className="text-lg font-semibold text-white mb-4">Category Averages</h3>
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={categoryAverages} layout="vertical">
+                  <BarChart data={stats.categoryAverages} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                     <XAxis type="number" domain={[0, 100]} stroke="#94a3b8" fontSize={12} />
                     <YAxis type="category" dataKey="name" stroke="#94a3b8" fontSize={11} width={80} />
@@ -156,7 +319,7 @@ function AdminDashboard() {
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
-                      data={scoreDistribution.filter(d => d.value > 0)}
+                      data={stats.scoreDistribution.filter(d => d.value > 0)}
                       cx="50%"
                       cy="50%"
                       innerRadius={50}
@@ -164,7 +327,7 @@ function AdminDashboard() {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {scoreDistribution.map((entry, index) => (
+                      {stats.scoreDistribution.filter(d => d.value > 0).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -183,7 +346,7 @@ function AdminDashboard() {
             <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
               <h3 className="text-lg font-semibold text-white mb-4">Overall Organizational Pattern (All Respondents)</h3>
               <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={categoryAverages}>
+                <RadarChart data={stats.categoryAverages}>
                   <PolarGrid stroke="#475569" />
                   <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} />
                   <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 10 }} />
@@ -197,39 +360,36 @@ function AdminDashboard() {
           </>
         )}
 
-        {view === 'responses' && (
+        {stats && responses && categories && view === 'responses' && (
           <div className="grid md:grid-cols-3 gap-6">
             {/* Response List */}
             <div className="md:col-span-1 bg-slate-900/60 rounded-xl border border-slate-700/50 overflow-hidden">
               <div className="p-4 border-b border-slate-700/50">
                 <h3 className="text-lg font-semibold text-white">Responses</h3>
-                <p className="text-sm text-slate-400">{totalResponses} organizations</p>
+                <p className="text-sm text-slate-400">{stats.totalResponses} organizations</p>
               </div>
               <div className="max-h-[600px] overflow-y-auto">
-                {mockResponses.map((response) => {
-                  const avg = Math.round(response.scores.reduce((a, b) => a + b, 0) / response.scores.length)
-                  return (
-                    <div
-                      key={response.id}
-                      onClick={() => setSelectedResponse(response.id)}
-                      className={`p-4 border-b border-slate-700/30 cursor-pointer transition-colors ${
-                        selectedResponse === response.id ? 'bg-emerald-500/10' : 'hover:bg-slate-800/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-white">{response.org}</div>
-                          <div className="text-xs text-slate-400">{response.country} • {response.date}</div>
-                        </div>
-                        <div className={`text-lg font-bold ${
-                          avg >= 80 ? 'text-cyan-400' : avg >= 60 ? 'text-emerald-400' : avg >= 40 ? 'text-amber-400' : 'text-red-400'
-                        }`}>
-                          {avg}%
-                        </div>
+                {responses.map((response) => (
+                  <div
+                    key={response.id}
+                    onClick={() => setSelectedResponse(response.id)}
+                    className={`p-4 border-b border-slate-700/30 cursor-pointer transition-colors ${
+                      selectedResponse === response.id ? 'bg-emerald-500/10' : 'hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-white">{response.org}</div>
+                        <div className="text-xs text-slate-400">{languageName(response.language)} • {response.date}</div>
+                      </div>
+                      <div className={`text-lg font-bold ${
+                        response.overall >= 80 ? 'text-cyan-400' : response.overall >= 60 ? 'text-emerald-400' : response.overall >= 40 ? 'text-amber-400' : 'text-red-400'
+                      }`}>
+                        {response.overall}%
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -240,12 +400,10 @@ function AdminDashboard() {
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h2 className="text-2xl font-bold text-white">{selectedOrg.org}</h2>
-                      <p className="text-slate-400">{selectedOrg.country} • Submitted {selectedOrg.date}</p>
+                      <p className="text-slate-400">{languageName(selectedOrg.language)} • Submitted {selectedOrg.date}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-4xl font-bold text-emerald-400">
-                        {Math.round(selectedOrg.scores.reduce((a, b) => a + b, 0) / selectedOrg.scores.length)}%
-                      </div>
+                      <div className="text-4xl font-bold text-emerald-400">{selectedOrg.overall}%</div>
                       <div className="text-sm text-slate-400">Overall Score</div>
                     </div>
                   </div>
@@ -254,8 +412,8 @@ function AdminDashboard() {
                   <div className="mb-6">
                     <ResponsiveContainer width="100%" height={250}>
                       <RadarChart data={categories.map((cat, idx) => ({
-                        name: cat.name.split(' ')[0],
-                        score: selectedOrg.scores[idx],
+                        name: cat.name,
+                        score: selectedOrg.scores[idx] ?? 0,
                       }))}>
                         <PolarGrid stroke="#475569" />
                         <PolarAngleAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} />
@@ -271,15 +429,17 @@ function AdminDashboard() {
                       <div key={cat.id} className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg">
                         <span className="text-xl">{cat.icon}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs text-slate-400 truncate">{cat.name}</div>
+                          <div className="text-xs text-slate-400 truncate">{cat.fullName}</div>
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all"
-                                style={{ width: `${selectedOrg.scores[idx]}%` }}
+                                style={{ width: `${selectedOrg.scores[idx] ?? 0}%` }}
                               />
                             </div>
-                            <span className="text-sm font-medium text-white w-10 text-right">{selectedOrg.scores[idx]}%</span>
+                            <span className="text-sm font-medium text-white w-10 text-right">
+                              {selectedOrg.scores[idx] !== null ? `${selectedOrg.scores[idx]}%` : '—'}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -298,16 +458,16 @@ function AdminDashboard() {
           </div>
         )}
 
-        {view === 'trends' && (
+        {stats && responses && view === 'trends' && (
           <div className="space-y-6">
             {/* Response Trend */}
             <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
               <h3 className="text-lg font-semibold text-white mb-4">Submissions Over Time</h3>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={trendData}>
+                <LineChart data={stats.trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
-                  <YAxis stroke="#94a3b8" fontSize={12} />
+                  <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
                   />
@@ -320,7 +480,7 @@ function AdminDashboard() {
             <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
               <h3 className="text-lg font-semibold text-white mb-4">Average Score Trend</h3>
               <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={trendData}>
+                <LineChart data={stats.trendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
                   <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={12} />
@@ -332,18 +492,19 @@ function AdminDashboard() {
               </ResponsiveContainer>
             </div>
 
-            {/* Country Breakdown */}
+            {/* Language Breakdown */}
             <div className="bg-slate-900/60 rounded-xl p-4 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4">Responses by Country</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Responses by Language</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {Object.entries(
-                  mockResponses.reduce((acc, r) => {
-                    acc[r.country] = (acc[r.country] || 0) + 1
+                  responses.reduce((acc, r) => {
+                    const name = languageName(r.language)
+                    acc[name] = (acc[name] || 0) + 1
                     return acc
                   }, {} as Record<string, number>)
-                ).sort((a, b) => b[1] - a[1]).map(([country, count]) => (
-                  <div key={country} className="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between">
-                    <span className="text-sm text-white">{country}</span>
+                ).sort((a, b) => b[1] - a[1]).map(([language, count]) => (
+                  <div key={language} className="bg-slate-800/50 rounded-lg p-3 flex items-center justify-between">
+                    <span className="text-sm text-white">{language}</span>
                     <span className="text-sm font-medium text-emerald-400">{count}</span>
                   </div>
                 ))}
