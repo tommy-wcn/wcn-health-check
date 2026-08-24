@@ -12,6 +12,8 @@ import pg from 'pg'
 
 const BASE_ID = 'apphdPdSXAihErhnR'
 const TABLE_ID = 'tbl1KOtdMe83SixVr'
+const PARTNERS_TABLE_ID = 'tblrU8nJU3Y69fyFb'
+const PARTNER_NAME_FIELD = 'Partner Organization'
 
 const FIELDS = {
   topic: 'Topic',
@@ -39,11 +41,11 @@ const toBullets = (text) =>
     .map((b) => b.trim())
     .filter(Boolean)
 
-async function fetchAllRecords() {
+async function fetchAllRecords(tableId) {
   const records = []
   let offset
   do {
-    const url = new URL(`https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`)
+    const url = new URL(`https://api.airtable.com/v0/${BASE_ID}/${tableId}`)
     if (offset) url.searchParams.set('offset', offset)
     const res = await fetch(url, { headers: { Authorization: `Bearer ${airtableToken}` } })
     if (!res.ok) throw new Error(`Airtable API ${res.status}: ${await res.text()}`)
@@ -54,7 +56,13 @@ async function fetchAllRecords() {
   return records
 }
 
-const records = await fetchAllRecords()
+const records = await fetchAllRecords(TABLE_ID)
+const partnerRecords = await fetchAllRecords(PARTNERS_TABLE_ID)
+
+const partners = partnerRecords
+  .map((r) => r.fields[PARTNER_NAME_FIELD])
+  .filter(Boolean)
+  .sort((a, b) => a.localeCompare(b))
 
 const questions = records
   .filter((r) => r.fields[FIELDS.topic])
@@ -86,6 +94,12 @@ try {
       [q.id, slugify(q.category), q.title, pos, JSON.stringify(q.stageDescriptions)],
     )
   }
+  await client.query('delete from partner_organizations')
+  for (const [pos, name] of partners.entries()) {
+    await client.query('insert into partner_organizations (id, name, position) values ($1, $2, $3)', [
+      slugify(name), name, pos,
+    ])
+  }
   await client.query('commit')
 } catch (err) {
   await client.query('rollback')
@@ -93,4 +107,4 @@ try {
 } finally {
   await client.end()
 }
-console.log(`Synced ${questions.length} questions in ${categoryNames.length} categories to Supabase`)
+console.log(`Synced ${questions.length} questions in ${categoryNames.length} categories and ${partners.length} partner organizations to Supabase`)
