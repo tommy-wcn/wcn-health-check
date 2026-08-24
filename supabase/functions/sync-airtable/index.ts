@@ -1,0 +1,120 @@
+// Syncs assessment content from the WCN Airtable base into the Supabase
+// content tables. Invoked by the admin dashboard's "Sync from Airtable"
+// button; only signed-in staff may trigger it.
+//
+// Deploy:  npx supabase functions deploy sync-airtable --project-ref <ref>
+// Secrets: npx supabase secrets set AIRTABLE_TOKEN=pat... --project-ref <ref>
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
+const BASE_ID = 'apphdPdSXAihErhnR'
+const TABLE_ID = 'tbl1KOtdMe83SixVr'
+
+const FIELDS = {
+  topic: 'Topic',
+  category: 'Meta-Category',
+  sortOrder: 'Sort Order',
+  stages: ['Planting Text', 'Seedling Text', 'Growing Text', 'Harvesting Text'],
+}
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+
+const slugify = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '')
+
+const toBullets = (text: string) =>
+  text
+    .trim()
+    .split('\n')
+    .filter((l) => l.trim())
+    .flatMap((line) => line.split(/(?<=[.!?])\s+(?=[A-Z"(])/))
+    .map((b) => b.trim())
+    .filter(Boolean)
+
+async function fetchAllRecords(token: string) {
+  const records: { fields: Record<string, unknown> }[] = []
+  let offset: string | undefined
+  do {
+    const url = new URL(`https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`)
+    if (offset) url.searchParams.set('offset', offset)
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) throw new Error(`Airtable API ${res.status}: ${await res.text()}`)
+    const page = await res.json()
+    records.push(...page.records)
+    offset = page.offset
+  } while (offset)
+  return records
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+
+  // Only signed-in staff may sync (the anon key alone is not enough).
+  const authed = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } },
+  )
+  const { data: { user } } = await authed.auth.getUser()
+  if (!user) return json({ error: 'Sign in required' }, 401)
+
+  const airtableToken = Deno.env.get('AIRTABLE_TOKEN')
+  if (!airtableToken) return json({ error: 'AIRTABLE_TOKEN secret is not configured' }, 500)
+
+  try {
+    const records = await fetchAllRecords(airtableToken)
+
+    const questions = records
+      .filter((r) => r.fields[FIELDS.topic])
+      .map((r) => ({
+        id: slugify(r.fields[FIELDS.topic] as string),
+        title: r.fields[FIELDS.topic] as string,
+        category: (r.fields[FIELDS.category] as string) ?? 'Uncategorized',
+        sortOrder: (r.fields[FIELDS.sortOrder] as number) ?? Number.MAX_SAFE_INTEGER,
+        stageDescriptions: FIELDS.stages.map((f) => toBullets((r.fields[f] as string) ?? '')),
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+
+    const categoryNames = [...new Set(questions.map((q) => q.category))]
+
+    // Service role bypasses RLS; content tables have no client write policies.
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    // Full replace: content is small and Airtable is the source of truth.
+    // Deleting categories cascades to questions.
+    const del = await admin.from('content_categories').delete().neq('id', '')
+    if (del.error) throw del.error
+
+    const catInsert = await admin.from('content_categories').insert(
+      categoryNames.map((name, position) => ({ id: slugify(name), name, position })),
+    )
+    if (catInsert.error) throw catInsert.error
+
+    const qInsert = await admin.from('content_questions').insert(
+      questions.map((q, position) => ({
+        id: q.id,
+        category_id: slugify(q.category),
+        title: q.title,
+        position,
+        stage_descriptions: q.stageDescriptions,
+      })),
+    )
+    if (qInsert.error) throw qInsert.error
+
+    return json({ ok: true, categories: categoryNames.length, questions: questions.length })
+  } catch (err) {
+    console.error(err)
+    return json({ error: err instanceof Error ? err.message : String(err) }, 500)
+  }
+})

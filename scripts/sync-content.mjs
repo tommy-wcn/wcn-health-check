@@ -1,37 +1,29 @@
 /**
- * Pulls assessment content from the WCN Airtable base and regenerates
- * src/data/questions.generated.json.
+ * Pulls assessment content from the WCN Airtable base and writes it into the
+ * Supabase content tables (content_categories / content_questions).
  *
- * Usage: AIRTABLE_TOKEN=pat... npm run sync:content
- * The token needs data.records:read scope on the base.
+ * Usage: node --env-file=.env scripts/sync-content.mjs
+ * Requires AIRTABLE_TOKEN (data.records:read) and SUPABASE_DB_URL in .env.
+ *
+ * The admin dashboard's "Sync from Airtable" button runs the same logic via
+ * the sync-airtable edge function (supabase/functions/sync-airtable).
  */
-import { writeFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
+import pg from 'pg'
 
 const BASE_ID = 'apphdPdSXAihErhnR'
 const TABLE_ID = 'tbl1KOtdMe83SixVr'
-const OUT = fileURLToPath(new URL('../src/data/questions.generated.json', import.meta.url))
 
 const FIELDS = {
   topic: 'Topic',
   category: 'Meta-Category',
+  sortOrder: 'Sort Order',
   stages: ['Planting Text', 'Seedling Text', 'Growing Text', 'Harvesting Text'],
 }
 
-const CATEGORY_ORDER = [
-  'Strategic Planning',
-  'Registration and Governance',
-  'Finance and Accounting',
-  'Human Resources',
-  'Donor Engagement and Fundraising',
-  'External Marketing and Communications',
-  'Infrastructure and Equipment',
-  'Commitment to People and Place',
-]
-
-const token = process.env.AIRTABLE_TOKEN
-if (!token) {
-  console.error('Set AIRTABLE_TOKEN to an Airtable personal access token.')
+const airtableToken = process.env.AIRTABLE_TOKEN
+const dbUrl = process.env.SUPABASE_DB_URL
+if (!airtableToken || !dbUrl) {
+  console.error('Set AIRTABLE_TOKEN and SUPABASE_DB_URL in .env.')
   process.exit(1)
 }
 
@@ -53,7 +45,7 @@ async function fetchAllRecords() {
   do {
     const url = new URL(`https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`)
     if (offset) url.searchParams.set('offset', offset)
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${airtableToken}` } })
     if (!res.ok) throw new Error(`Airtable API ${res.status}: ${await res.text()}`)
     const page = await res.json()
     records.push(...page.records)
@@ -70,13 +62,35 @@ const questions = records
     id: slugify(r.fields[FIELDS.topic]),
     title: r.fields[FIELDS.topic],
     category: r.fields[FIELDS.category] ?? 'Uncategorized',
+    sortOrder: r.fields[FIELDS.sortOrder] ?? Number.MAX_SAFE_INTEGER,
     stageDescriptions: FIELDS.stages.map((f) => toBullets(r.fields[f] ?? '')),
   }))
-  .sort((a, b) => {
-    const ca = CATEGORY_ORDER.indexOf(a.category)
-    const cb = CATEGORY_ORDER.indexOf(b.category)
-    return (ca === -1 ? 99 : ca) - (cb === -1 ? 99 : cb) || a.title.localeCompare(b.title)
-  })
+  .sort((a, b) => a.sortOrder - b.sortOrder)
 
-await writeFile(OUT, JSON.stringify({ questions }, null, 2) + '\n')
-console.log(`Wrote ${questions.length} questions to ${OUT}`)
+const categoryNames = [...new Set(questions.map((q) => q.category))]
+
+const client = new pg.Client({ connectionString: dbUrl })
+await client.connect()
+try {
+  await client.query('begin')
+  // Full replace: content is small and Airtable is the source of truth.
+  await client.query('delete from content_categories')
+  for (const [pos, name] of categoryNames.entries()) {
+    await client.query('insert into content_categories (id, name, position) values ($1, $2, $3)', [
+      slugify(name), name, pos,
+    ])
+  }
+  for (const [pos, q] of questions.entries()) {
+    await client.query(
+      'insert into content_questions (id, category_id, title, position, stage_descriptions) values ($1, $2, $3, $4, $5)',
+      [q.id, slugify(q.category), q.title, pos, JSON.stringify(q.stageDescriptions)],
+    )
+  }
+  await client.query('commit')
+} catch (err) {
+  await client.query('rollback')
+  throw err
+} finally {
+  await client.end()
+}
+console.log(`Synced ${questions.length} questions in ${categoryNames.length} categories to Supabase`)

@@ -1,19 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GrowingTree } from './GrowingTree'
-import { translations, languages, categoryIcons, questionPlantIcons, type Language } from './i18n'
-
-// Question IDs per category (static structure)
-const questionIds = [
-  [101, 102, 103, 104, 105],           // Registration & Governance
-  [201, 202, 203, 204, 205, 206],      // Human Resources
-  [301, 302, 303, 304],                // Strategic Planning
-  [401, 402, 403, 404],                // Finance & Accounting
-  [501, 502, 503, 504, 505],           // Commitment to People
-  [601, 602, 603, 604],                // Infrastructure
-  [701, 702, 703, 704],                // Donor Engagement
-  [801, 802, 803, 804],                // External Marketing
-]
+import { translations, languages, type Language } from './i18n'
+import { loadContent, plantIcon, type Category } from './data/content'
+import { supabase } from './lib/supabase'
 
 const stageStyles = [
   { bgGradient: 'bg-gradient-to-br from-amber-950/30 to-stone-950/40' },
@@ -24,28 +14,79 @@ const stageStyles = [
 
 function App() {
   const [currentCategory, setCurrentCategory] = useState(0)
-  const [answers, setAnswers] = useState<Record<number, number>>({})
-  const [notes, setNotes] = useState<Record<number, string>>({})
+  const [answers, setAnswers] = useState<Record<string, number>>({})
+  const [notes, setNotes] = useState<Record<string, string>>({})
   const [lang, setLang] = useState<Language>('en')
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
+  const [orgName, setOrgName] = useState('')
+  const [submitState, setSubmitState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
+  const [content, setContent] = useState<Category[] | null>(null)
+  const [contentError, setContentError] = useState(false)
+
+  useEffect(() => {
+    loadContent()
+      .then(setContent)
+      .catch((err) => {
+        console.error(err)
+        setContentError(true)
+      })
+  }, [])
 
   const t = translations[lang]
-  const qIds = questionIds[currentCategory]
-  const categoryT = t.categories[currentCategory]
-  const totalQuestions = qIds.length
-  const answeredInCategory = qIds.filter(id => answers[id]).length
+
+  if (contentError || content === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="text-center text-slate-400">
+          <div className="text-4xl mb-3">{contentError ? '🥀' : '🌱'}</div>
+          <p>{contentError ? 'Could not load the health check. Please refresh to try again.' : 'Loading…'}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const CATEGORIES = content
+  const TOTAL_QUESTIONS = content.reduce((sum, c) => sum + c.questions.length, 0)
+  const category = CATEGORIES[currentCategory]
+  const totalQuestions = category.questions.length
+  const answeredInCategory = category.questions.filter(q => answers[q.id]).length
   const categoryProgress = (answeredInCategory / totalQuestions) * 100
-  const categoryScore = qIds.reduce((sum, id) => sum + (answers[id] || 0), 0)
+  const categoryScore = category.questions.reduce((sum, q) => sum + (answers[q.id] || 0), 0)
   const maxCategoryScore = totalQuestions * 4
   const categoryScorePercent = Math.round((categoryScore / maxCategoryScore) * 100)
   const allAnsweredInCategory = answeredInCategory === totalQuestions
 
-  const totalAllQuestions = questionIds.reduce((sum, q) => sum + q.length, 0)
   const totalAnswered = Object.keys(answers).length
-  const overallProgress = Math.round((totalAnswered / totalAllQuestions) * 100)
+  const overallProgress = Math.round((totalAnswered / TOTAL_QUESTIONS) * 100)
 
-  const handleSelect = (questionId: number, level: number) => {
+  const handleSelect = (questionId: string, level: number) => {
     setAnswers({ ...answers, [questionId]: level })
+  }
+
+  const handleSubmit = async () => {
+    setSubmitState('saving')
+    const submissionId = crypto.randomUUID()
+    const { error: submissionError } = await supabase
+      .from('submissions')
+      .insert({ id: submissionId, org_name: orgName.trim(), language: lang })
+    if (submissionError) {
+      console.error(submissionError)
+      setSubmitState('error')
+      return
+    }
+    const rows = Object.entries(answers).map(([questionId, level]) => ({
+      submission_id: submissionId,
+      question_id: questionId,
+      level,
+      note: notes[questionId]?.trim() || null,
+    }))
+    const { error: answersError } = await supabase.from('answers').insert(rows)
+    if (answersError) {
+      console.error(answersError)
+      setSubmitState('error')
+      return
+    }
+    setSubmitState('done')
   }
 
   return (
@@ -87,20 +128,19 @@ function App() {
             {t.title} <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">{t.subtitle}</span>
           </h1>
           <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mb-3">
-            <span>{t.overall}: {overallProgress}% ({totalAnswered}/{totalAllQuestions})</span>
+            <span>{t.overall}: {overallProgress}% ({totalAnswered}/{TOTAL_QUESTIONS})</span>
             <div className="w-32 h-1.5 rounded-full bg-slate-800 overflow-hidden">
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500" style={{ width: `${overallProgress}%` }}></div>
             </div>
           </div>
           <div className="flex flex-wrap justify-center gap-1.5">
-            {questionIds.map((qIdList, idx) => {
-              const catT = t.categories[idx]
-              const catAnswered = qIdList.filter(id => answers[id]).length
-              const catComplete = catAnswered === qIdList.length
+            {CATEGORIES.map((cat, idx) => {
+              const catAnswered = cat.questions.filter(q => answers[q.id]).length
+              const catComplete = catAnswered === cat.questions.length
               return (
-                <button key={idx} onClick={() => setCurrentCategory(idx)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${idx === currentCategory ? 'bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400' : catComplete ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400/80' : catAnswered > 0 ? 'bg-slate-800/80 border border-slate-600 text-slate-300' : 'bg-slate-800/60 border border-slate-700/50 text-slate-400 hover:bg-slate-700/60'}`}>
-                  <span>{categoryIcons[idx]}</span>
-                  <span className="hidden md:inline">{catT.name}</span>
+                <button key={cat.id} onClick={() => setCurrentCategory(idx)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${idx === currentCategory ? 'bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400' : catComplete ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400/80' : catAnswered > 0 ? 'bg-slate-800/80 border border-slate-600 text-slate-300' : 'bg-slate-800/60 border border-slate-700/50 text-slate-400 hover:bg-slate-700/60'}`}>
+                  <span>{cat.icon}</span>
+                  <span className="hidden md:inline">{cat.name}</span>
                   {catComplete && <span className="text-emerald-400">✓</span>}
                 </button>
               )
@@ -113,9 +153,9 @@ function App() {
           <div className="bg-slate-900/60 backdrop-blur-xl rounded-t-2xl p-4 border border-slate-700/50 border-b-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-xl shadow-lg">{categoryIcons[currentCategory]}</div>
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-xl shadow-lg">{category.icon}</div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">{categoryT.name}</h2>
+                  <h2 className="text-lg font-bold text-white">{category.name}</h2>
                   <p className="text-slate-400 text-xs">{answeredInCategory}/{totalQuestions} {t.completed}</p>
                 </div>
               </div>
@@ -130,19 +170,16 @@ function App() {
           </div>
 
           <div className="space-y-0">
-            {qIds.map((questionId, qIdx) => {
-              const questionT = categoryT.questions[qIdx]
-              const plantIcon = questionPlantIcons[currentCategory][qIdx]
-              const currentAnswer = answers[questionId] || 0
+            {category.questions.map((question, qIdx) => {
+              const currentAnswer = answers[question.id] || 0
               return (
-                <div key={questionId} className={`bg-slate-900/60 backdrop-blur-xl p-4 border-x border-slate-700/50 ${qIdx === qIds.length - 1 ? '' : 'border-b border-slate-700/30'}`}>
+                <div key={question.id} className={`bg-slate-900/60 backdrop-blur-xl p-4 border-x border-slate-700/50 ${qIdx === totalQuestions - 1 ? '' : 'border-b border-slate-700/30'}`}>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">{plantIcon}</span>
+                    <span className="text-lg">{plantIcon(qIdx)}</span>
                     <div className="flex-1">
-                      <span className="text-sm font-semibold text-white">{questionT.title}</span>
-                      <span className="text-slate-500 text-xs ml-2">— {questionT.desc}</span>
+                      <span className="text-sm font-semibold text-white">{question.title}</span>
                     </div>
-                    {currentAnswer > 0 && <span className="text-emerald-400 text-xs font-medium px-2 py-0.5 bg-emerald-500/10 rounded-full">{t.level} {currentAnswer}</span>}
+                    {currentAnswer > 0 && <span className="text-emerald-400 text-xs font-medium px-2 py-0.5 bg-emerald-500/10 rounded-full">{t.stages[currentAnswer - 1].name}</span>}
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {t.stages.map((stage, idx) => {
@@ -150,13 +187,19 @@ function App() {
                       const style = stageStyles[idx]
                       const isSelected = currentAnswer === level
                       return (
-                        <div key={level} onClick={() => handleSelect(questionId, level)} className={`relative cursor-pointer rounded-lg p-2 transition-all duration-200 ${style.bgGradient} border ${isSelected ? 'border-yellow-400 shadow-md shadow-yellow-500/20 scale-[1.03]' : 'border-slate-700/50 hover:border-slate-600'}`}>
-                          <div className="flex items-center gap-1 mb-1">
+                        <div key={level} onClick={() => handleSelect(question.id, level)} className={`relative cursor-pointer rounded-lg p-2 transition-all duration-200 ${style.bgGradient} border ${isSelected ? 'border-yellow-400 shadow-md shadow-yellow-500/20 scale-[1.03]' : 'border-slate-700/50 hover:border-slate-600'}`}>
+                          <div className="flex items-center gap-1 mb-2">
                             <span className="text-sm">{['🌱', '🌿', '🌳', '🍎'][idx]}</span>
-                            <span className={`text-xs font-bold ${isSelected ? 'text-yellow-400' : 'text-white'}`}>{level}</span>
+                            <span className={`text-xs font-bold ${isSelected ? 'text-yellow-400' : 'text-white'}`}>{stage.name}</span>
                           </div>
-                          <p className="text-[10px] font-medium text-white leading-tight">{stage.name}</p>
-                          <p className="text-[9px] text-slate-400 leading-tight">{stage.title}</p>
+                          <ul className="space-y-1">
+                            {question.stageDescriptions[idx].map((item, i) => (
+                              <li key={i} className="text-[10px] text-slate-300 leading-snug flex items-start gap-1">
+                                <span className="text-slate-500 mt-px">•</span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
                           {isSelected && <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center"><svg className="w-2.5 h-2.5 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg></div>}
                         </div>
                       )
@@ -166,7 +209,7 @@ function App() {
                     </div>
                   </div>
                   {currentAnswer > 0 && (
-                    <textarea value={notes[questionId] || ''} onChange={(e) => setNotes({ ...notes, [questionId]: e.target.value })} placeholder={t.notesPlaceholder} rows={1} className="w-full mt-2 px-3 py-1.5 rounded-lg bg-slate-800/40 border border-slate-700/30 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none text-xs" />
+                    <textarea value={notes[question.id] || ''} onChange={(e) => setNotes({ ...notes, [question.id]: e.target.value })} placeholder={t.notesPlaceholder} rows={1} className="w-full mt-2 px-3 py-1.5 rounded-lg bg-slate-800/40 border border-slate-700/30 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none text-xs" />
                   )}
                 </div>
               )
@@ -177,10 +220,10 @@ function App() {
             <div className="flex items-center justify-between">
               <div className="text-sm text-slate-400">{allAnsweredInCategory ? <span className="text-emerald-400">{t.categoryComplete}</span> : <span>{t.completeAll}</span>}</div>
               <div className="flex gap-2">
-                {qIds.map((qId, qIdx) => (
-                  <div key={qId} className="text-center">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${answers[qId] ? 'bg-emerald-500/20' : 'bg-slate-800/50'}`}>{questionPlantIcons[currentCategory][qIdx]}</div>
-                    <span className="text-[9px] text-slate-500">{answers[qId] || '-'}</span>
+                {category.questions.map((q, qIdx) => (
+                  <div key={q.id} className="text-center">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${answers[q.id] ? 'bg-emerald-500/20' : 'bg-slate-800/50'}`}>{plantIcon(qIdx)}</div>
+                    <span className="text-[9px] text-slate-500">{answers[q.id] ? t.stages[answers[q.id] - 1].name : '-'}</span>
                   </div>
                 ))}
               </div>
@@ -189,7 +232,49 @@ function App() {
 
           <div className="flex justify-between mt-4">
             <button onClick={() => setCurrentCategory(Math.max(0, currentCategory - 1))} disabled={currentCategory === 0} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${currentCategory === 0 ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/50'}`}>{t.previous}</button>
-            <button onClick={() => setCurrentCategory(Math.min(questionIds.length - 1, currentCategory + 1))} disabled={currentCategory === questionIds.length - 1} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${currentCategory === questionIds.length - 1 ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'}`}>{t.next}</button>
+            <button onClick={() => setCurrentCategory(Math.min(CATEGORIES.length - 1, currentCategory + 1))} disabled={currentCategory === CATEGORIES.length - 1} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${currentCategory === CATEGORIES.length - 1 ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'}`}>{t.next}</button>
+          </div>
+        </div>
+
+        {/* Submit */}
+        <div className="max-w-5xl mx-auto mt-6">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-5 border border-slate-700/50">
+            {submitState === 'done' ? (
+              <div className="text-center py-2">
+                <div className="text-3xl mb-2">🌳</div>
+                <p className="text-emerald-400 font-semibold">Thank you! Your health check has been submitted.</p>
+                <p className="text-slate-400 text-sm mt-1">{orgName.trim()} — {totalAnswered}/{TOTAL_QUESTIONS} questions answered</p>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
+                <div className="flex-1">
+                  <label htmlFor="org-name" className="block text-xs text-slate-400 mb-1">Organization name</label>
+                  <input
+                    id="org-name"
+                    type="text"
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    maxLength={200}
+                    placeholder="Your organization…"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 text-sm"
+                  />
+                </div>
+                <div className="md:self-end flex items-center gap-3">
+                  {submitState === 'error' && <span className="text-red-400 text-xs">Something went wrong — please try again.</span>}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitState === 'saving' || totalAnswered === 0 || !orgName.trim()}
+                    className={`px-6 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                      submitState !== 'saving' && totalAnswered > 0 && orgName.trim()
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'
+                        : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
+                    }`}
+                  >
+                    {submitState === 'saving' ? 'Submitting…' : `Submit (${totalAnswered}/${TOTAL_QUESTIONS} answered)`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
