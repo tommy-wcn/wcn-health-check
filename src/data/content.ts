@@ -5,14 +5,16 @@ export interface Question {
   title: string
   /** Maturity rubric, one entry per stage (Planting → Harvesting). */
   stageDescriptions: string[][]
-  /** Optional video guide URL from the Airtable "Video Guide" column. */
-  videoGuide: string | null
 }
 
 export interface Category {
   id: string
   name: string
   icon: string
+  /** Optional intro copy from the Airtable Meta Category "Intro Text" column. */
+  introText: string | null
+  /** Optional video URL from the Airtable Meta Category "Video Overview" column. */
+  videoGuide: string | null
   questions: Question[]
 }
 
@@ -36,8 +38,8 @@ const PLANT_ICON_POOL = ['🌳', '🌿', '🌴', '🎋', '🌲', '🌵', '🍀']
  */
 export async function loadContent(): Promise<Category[]> {
   const [cats, questions] = await Promise.all([
-    supabase.from('content_categories').select('id, name').order('position'),
-    supabase.from('content_questions').select('id, category_id, title, stage_descriptions, video_guide').order('position'),
+    supabase.from('content_categories').select('id, name, intro_text, video_guide').order('position'),
+    supabase.from('content_questions').select('id, category_id, title, stage_descriptions').order('position'),
   ])
   if (cats.error) throw cats.error
   if (questions.error) throw questions.error
@@ -45,9 +47,11 @@ export async function loadContent(): Promise<Category[]> {
     id: c.id,
     name: c.name,
     icon: CATEGORY_ICONS[c.id] ?? '📋',
+    introText: c.intro_text ?? null,
+    videoGuide: c.video_guide ?? null,
     questions: questions.data
       .filter((q) => q.category_id === c.id)
-      .map((q) => ({ id: q.id, title: q.title, stageDescriptions: q.stage_descriptions, videoGuide: q.video_guide ?? null })),
+      .map((q) => ({ id: q.id, title: q.title, stageDescriptions: q.stage_descriptions })),
   }))
 }
 

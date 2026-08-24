@@ -67,7 +67,7 @@ function App() {
   const maxCategoryScore = totalQuestions * 4
   const categoryScorePercent = Math.round((categoryScore / maxCategoryScore) * 100)
   const allAnsweredInCategory = answeredInCategory === totalQuestions
-  const categoryVideos = category.questions.filter((q) => q.videoGuide)
+  const categoryEmbedUrl = category.videoGuide ? youtubeEmbedUrl(category.videoGuide) : null
 
   const totalAnswered = Object.keys(answers).length
   const overallProgress = Math.round((totalAnswered / TOTAL_QUESTIONS) * 100)
@@ -257,40 +257,32 @@ function App() {
             <div className="mt-3 h-1.5 rounded-full bg-slate-800 overflow-hidden">
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500" style={{ width: `${categoryProgress}%` }}></div>
             </div>
-          </div>
 
-          {categoryVideos.length > 0 && (
-            <div className="bg-slate-900/60 backdrop-blur-xl px-4 pb-4 border-x border-slate-700/50 border-b border-slate-700/30">
-              <div className={`grid gap-3 ${categoryVideos.length > 1 ? 'md:grid-cols-2' : ''}`}>
-                {categoryVideos.map((q) => {
-                  const embedUrl = youtubeEmbedUrl(q.videoGuide!)
-                  return (
-                    <div key={q.id}>
-                      <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold text-slate-300">
-                        <span>🎬</span>
-                        <span>{q.title}</span>
-                      </div>
-                      {embedUrl ? (
-                        <div className="relative w-full rounded-xl overflow-hidden border border-slate-700/50" style={{ paddingBottom: '56.25%' }}>
-                          <iframe
-                            src={embedUrl}
-                            title={q.title}
-                            className="absolute inset-0 w-full h-full"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                      ) : (
-                        <a href={q.videoGuide!} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 underline break-all">
-                          {q.videoGuide}
-                        </a>
-                      )}
+            {(category.introText || category.videoGuide) && (
+              <div className={`mt-4 grid gap-4 items-start ${category.videoGuide ? 'md:grid-cols-2' : ''}`}>
+                {category.introText && (
+                  <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{category.introText}</div>
+                )}
+                {category.videoGuide && (
+                  categoryEmbedUrl ? (
+                    <div className="relative w-full rounded-xl overflow-hidden border border-slate-700/50" style={{ paddingBottom: '56.25%' }}>
+                      <iframe
+                        src={categoryEmbedUrl}
+                        title={category.name}
+                        className="absolute inset-0 w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
                     </div>
+                  ) : (
+                    <a href={category.videoGuide} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 underline break-all">
+                      {category.videoGuide}
+                    </a>
                   )
-                })}
+                )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="space-y-0">
             {category.questions.map((question, qIdx) => {
