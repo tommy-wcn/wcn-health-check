@@ -12,6 +12,29 @@ const stageStyles = [
   { bgGradient: 'bg-gradient-to-br from-green-950/30 to-emerald-950/40' },
 ]
 
+const STORAGE_KEY = 'wcn-health-check-progress'
+
+interface SavedProgress {
+  respondent: { name: string; email: string; org: string }
+  answers: Record<string, number>
+  notes: Record<string, string>
+  currentCategory: number
+  lang: Language
+  savedAt: string
+}
+
+function readSavedProgress(): SavedProgress | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed?.respondent?.name || !parsed?.respondent?.org) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
 function App() {
   const [currentCategory, setCurrentCategory] = useState(0)
   const [answers, setAnswers] = useState<Record<string, number>>({})
@@ -28,6 +51,31 @@ function App() {
   const [formOrg, setFormOrg] = useState('')
 
   const [siteText, setSiteText] = useState<Record<string, string>>({})
+  const [savedProgress, setSavedProgress] = useState<SavedProgress | null>(readSavedProgress)
+
+  // Autosave progress so a refresh or accidental navigation doesn't lose answers
+  useEffect(() => {
+    if (!respondent || submitState === 'done') return
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ respondent, answers, notes, currentCategory, lang, savedAt: new Date().toISOString() }),
+    )
+  }, [respondent, answers, notes, currentCategory, lang, submitState])
+
+  const resumeProgress = () => {
+    if (!savedProgress || !content) return
+    const validIds = new Set(content.flatMap((c) => c.questions.map((q) => q.id)))
+    setAnswers(Object.fromEntries(Object.entries(savedProgress.answers ?? {}).filter(([id]) => validIds.has(id))))
+    setNotes(Object.fromEntries(Object.entries(savedProgress.notes ?? {}).filter(([id]) => validIds.has(id))))
+    setCurrentCategory(Math.min(savedProgress.currentCategory ?? 0, content.length - 1))
+    if (savedProgress.lang in translations) setLang(savedProgress.lang)
+    setRespondent(savedProgress.respondent)
+  }
+
+  const startOver = () => {
+    localStorage.removeItem(STORAGE_KEY)
+    setSavedProgress(null)
+  }
 
   useEffect(() => {
     Promise.all([loadContent(), loadPartnerOrgs(), loadSiteText()])
@@ -106,6 +154,7 @@ function App() {
       setSubmitState('error')
       return
     }
+    localStorage.removeItem(STORAGE_KEY)
     setSubmitState('done')
   }
 
@@ -192,6 +241,30 @@ function App() {
                 </p>
               )}
             </div>
+            {savedProgress ? (
+              <div className="text-center">
+                <div className="bg-slate-800/50 rounded-xl p-4 mb-4 text-left">
+                  <p className="text-white text-sm font-medium">Welcome back, {savedProgress.respondent.name}!</p>
+                  <p className="text-slate-400 text-xs mt-1">
+                    {savedProgress.respondent.org} — {Object.keys(savedProgress.answers ?? {}).length} answer{Object.keys(savedProgress.answers ?? {}).length === 1 ? '' : 's'} saved
+                    {' '}on {new Date(savedProgress.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+                <button
+                  onClick={resumeProgress}
+                  className="w-full py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-[1.02] transition-all"
+                >
+                  Resume where I left off →
+                </button>
+                <button
+                  onClick={startOver}
+                  className="w-full mt-2 py-2.5 rounded-xl text-sm font-medium bg-slate-800/60 text-slate-400 border border-slate-700/50 hover:bg-slate-700/60 transition-colors"
+                >
+                  Start over
+                </button>
+              </div>
+            ) : (
+            <>
             <label htmlFor="welcome-name" className="block text-xs text-slate-400 mb-1">Your name</label>
             <input
               id="welcome-name"
@@ -233,6 +306,8 @@ function App() {
             >
               Start the health check →
             </button>
+            </>
+            )}
           </div>
         </div>
         )}
