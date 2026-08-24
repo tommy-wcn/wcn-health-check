@@ -1,0 +1,1063 @@
+{
+  "questions": [
+    {
+      "id": "conservation-impact",
+      "title": "Conservation Impact",
+      "category": "Strategic Planning",
+      "stageDescriptions": [
+        [
+          "Organization has not been able to create more positive outcomes for people or wildlife, but does have ideas that could be implemented."
+        ],
+        [
+          "Organization has demonstrated ability to provide benefits to both people and wildlife, but fails to do so consistently."
+        ],
+        [
+          "Organization consistently implements solutions to help benefit people and wildlife in anecdotal ways, but does not have demonstrable evidence that the solutions are having a measurable impact."
+        ],
+        [
+          "Organization implemented nature-based solutions that help demonstrably and consistently benefit people and wildlife by protecting, sustainably managing, or restoring ecosystem health in ways that address societal challenges effectively and adaptively."
+        ]
+      ]
+    },
+    {
+      "id": "mission-vision-values",
+      "title": "Mission, Vision, & Values",
+      "category": "Strategic Planning",
+      "stageDescriptions": [
+        [
+          "There is no clear mission for the organization, or no one is aware of it.",
+          "No one is aware of the basic value base or the vision of society that the organization wants to achieve."
+        ],
+        [
+          "Chairperson/Leader has ideas about the mission, but not shared widely.",
+          "Values of the organization are sometimes reflected in the work, but not consistently."
+        ],
+        [
+          "Governing Body & key staff are clear about the mission and may have participated in its writing or modification.",
+          "Some of the staff use written mission & vision statement to guide their work.",
+          "Values are referred to and decisions generally reflect these values."
+        ],
+        [
+          "Clear mission & vision statement agreed upon and written down.",
+          "Staff, Governing Body, & community members can articulate the organization's core values.",
+          "Decisions and work consistently reflect these values."
+        ]
+      ]
+    },
+    {
+      "id": "monitoring-evaluation-adaptive-response",
+      "title": "Monitoring, Evaluation, & Adaptive Response",
+      "category": "Strategic Planning",
+      "stageDescriptions": [
+        [
+          "Staff work without guidance or without understanding the rationale and desired outcomes of the tasks set.",
+          "No outputs defined, or standards set.",
+          "Staff are unaware of the need to monitor activities.",
+          "Problems are ignored or dismissed lightly.",
+          "Solutions only delay or make the problem worse.",
+          "No attempt made to analyse problem."
+        ],
+        [
+          "Management monitors progress informally, and staff follow instructions.",
+          "Little initiative taken by staff to improve their own work.",
+          "Occasional evaluations done but are not used.",
+          "Lessons are not shared and discussed within the organization.",
+          "All problems referred to the Management.",
+          "Management offers solutions but does not analyse root causes."
+        ],
+        [
+          "Procedures are in place for routinely collecting and analysing mainly quantitative information.",
+          "Baseline surveys are standard.",
+          "Management evaluates projects on an irregular basis, with little participation from staff, Governing Body, or community members.",
+          "Staff try to solve some problems themselves.",
+          "Management analyse and address causes of problems, but not in a systematic way."
+        ],
+        [
+          "Project staff identify both quantitative & qualitative indicators and prepare regular, clear monitoring reports on all activities.",
+          "System of continuous reviews/evaluations in place with active involvement of community.",
+          "Results used to inform strategies & activities.",
+          "Entire staff engaged in and analysing and resolving root causes of problems in a systematic manner."
+        ]
+      ]
+    },
+    {
+      "id": "strategic-plan",
+      "title": "Strategic Plan",
+      "category": "Strategic Planning",
+      "stageDescriptions": [
+        [
+          "Organization has no long-range program goals.",
+          "Project activities and target beneficiaries are primarily determined by funding opportunities and donor preferences.",
+          "Staff wait to be told what to do by the Leader.",
+          "Staff do not know what they or others are to do each day."
+        ],
+        [
+          "Organization has program goals but these are vague, unrealistic or simply a list of planned projects/activities.",
+          "Staff know their duties but are unable to plan their work in advance.",
+          "Little coordination between projects and staff."
+        ],
+        [
+          "Organization has reasonably clear program goals and strategy, but only management can clearly articulate the goals.",
+          "Staff prepare individual work plans, but responsibility for tasks often confused due to limited coordination."
+        ],
+        [
+          "The organization has clear, specific program goals and strategy for 2-3 years to guide operations, which are consistent with the vision and mission, revised at annually.",
+          "All staff prepare cohesive individual plans across departments, coordinate with others, and can articulate organizational goals."
+        ]
+      ]
+    },
+    {
+      "id": "board-governance",
+      "title": "Board Governance",
+      "category": "Registration and Governance",
+      "stageDescriptions": [
+        [
+          "There is no functioning governing body formed.",
+          "Organization operates without reference to or support from the governing body.",
+          "Governing body members do not understand their roles, commitments, and responsibilities."
+        ],
+        [
+          "Organization has a functioning governing body with elected members, but they meet irregularly.",
+          "They are used for ad-hoc advice rather than strategic direction and accountability.",
+          "Meeting minutes are only sometimes taken and often lack detail.",
+          "Important decisions are only sometimes documented."
+        ],
+        [
+          "Governing body meetings are held on a regular schedule.",
+          "Elections for governing body are held in accordance with the constitution.",
+          "Members are clear about their role and responsibilities."
+        ],
+        [
+          "The organization has a well balanced, experienced and functioning governing body with clear roles and responsibilities that help maintain accountability for the organization's leadership.",
+          "Meeting minutes are taken for every meeting and all important decisions are adequately documented."
+        ]
+      ]
+    },
+    {
+      "id": "legal-registration",
+      "title": "Legal Registration",
+      "category": "Registration and Governance",
+      "stageDescriptions": [
+        [
+          "Organization has not yet registered with local authorities, nor set clear ideas about regulatory bylaws."
+        ],
+        [
+          "Leadership has started process of registration and written bylaws, but most staff and governing body members are not involved or aware in processes."
+        ],
+        [
+          "Organization is registered with local authorities but does not consistently comply with reporting requirements, nor is the constitution actually guiding the organization’s operations."
+        ],
+        [
+          "Organization has registered with government and consistently complies with reporting requirements.",
+          "Governing documents are applied consistently and reviewed to ensure effective, transparent, accountable, and democratic governance."
+        ]
+      ]
+    },
+    {
+      "id": "organization-policies-procedures",
+      "title": "Organization Policies & Procedures",
+      "category": "Registration and Governance",
+      "stageDescriptions": [
+        [
+          "The need for organizational policies and procedures is not recognised and they are not in place or not used."
+        ],
+        [
+          "Written policies are few, unclear, and often ignored in practice.",
+          "Few staff know the policies and follow the procedures."
+        ],
+        [
+          "Policies and procedures are written to cover most areas of need and are applied fairly consistently.",
+          "Most staff are aware of them."
+        ],
+        [
+          "Policies and procedures reflect the organization's values and purpose and are regularly reviewed.",
+          "All staff know and comply with them."
+        ]
+      ]
+    },
+    {
+      "id": "organizational-structure",
+      "title": "Organizational Structure",
+      "category": "Registration and Governance",
+      "stageDescriptions": [
+        [
+          "No organizational structure.",
+          "Reporting lines may exist in the minds of leadership but they do not reflect actual roles & responsibilities of the staff & governing body."
+        ],
+        [
+          "Staff recognize and respect lines of power and authority but the lack of communication means that most staff are unclear about the organizational structure."
+        ],
+        [
+          "A structured organogram exists but the lines of communication are not necessarily appropriate for the efficiency needs of the organization."
+        ],
+        [
+          "All staff clearly understand organogram, lines of responsibility, and communication, which reflect the efficiency needs and major responsibilities of the organization."
+        ]
+      ]
+    },
+    {
+      "id": "senior-leadership",
+      "title": "Senior Leadership",
+      "category": "Registration and Governance",
+      "stageDescriptions": [
+        [
+          "Leadership does not share a clear vision for the organization.",
+          "Management is respected only because of the power they wield, not necessarily because of the value they bring to the workplace."
+        ],
+        [
+          "Leadership is clear about the purpose of the organization, and is respected for their experience, but they are not consistent in inspiring that purpose through their interactions with staff.",
+          "Leadership is also only reliant on one key figurehead, rather than distributed."
+        ],
+        [
+          "Leaderships' practices reflect the organization's purpose, and effort is made to communicate this purpose to staff.",
+          "Management devotes time to developing staff skills and delegates more decision making to others in the organization."
+        ],
+        [
+          "Leadership is distributed across high-functioning team to ensure they're capable of managing and inspiring staff.",
+          "Organization invests in the development of new leadership.",
+          "The loss of a single leader would not sink the organization."
+        ]
+      ]
+    },
+    {
+      "id": "accounting-policies",
+      "title": "Accounting Policies",
+      "category": "Finance and Accounting",
+      "stageDescriptions": [
+        [
+          "No reliable records of financial transactions are kept and receipts are not retained.",
+          "Financial policies or procedures have not been established."
+        ],
+        [
+          "Transactions are recorded but not kept up to date.",
+          "Funds from different sources often comingled.",
+          "Many transactions lack supporting vouchers or receipts.",
+          "Accounts are attempted to be reconciled but often do not balance.",
+          "Accounts are not reconciled.",
+          "Some financial procedures have been developed but are often ignored in practice."
+        ],
+        [
+          "Most transactions recorded accurately and promptly but supporting documents are not always available or filed in a systematic manner.",
+          "Accounts are reconciled with few exceptions.",
+          "Written financial policies and procedures are in place but need improvement."
+        ],
+        [
+          "All transactions are recorded accurately and promptly following a systematically coded Chart of Accounts with all supporting documentation readily accessible.",
+          "Accounts are reconciled and organization has graduated to accrual accounting and prepares a reconciled Balance Sheet.",
+          "Financial policies and procedures are adhered to and meet current needs."
+        ]
+      ]
+    },
+    {
+      "id": "audits-external-oversight",
+      "title": "Audits & External Oversight",
+      "category": "Finance and Accounting",
+      "stageDescriptions": [
+        [
+          "There is no fiduciary oversight over the organization's finances.",
+          "There is no separation of duties and no internal controls over cash and financial reporting.",
+          "Funds are sometimes commingled.",
+          "Financial statements are shared with management and the Governing Body but they are often inaccurate and are not prepared on a regular schedule.",
+          "The Governing Body doesn't have a complete understanding of their fiduciary responsibilities."
+        ],
+        [
+          "The organization is considering implementing internal controls and separation of duties over cash and financial reporting."
+        ],
+        [
+          "Financial statements are generally accurate and are reviewed regularly by Management and the Governing Body.",
+          "Financial statements generally adhere to local accounting standards, revenues and expenses are recognized in the correct fiscal year.",
+          "Financial statements are reviewed by external parties such as: grantors, funders, and bankers."
+        ],
+        [
+          "Financial statements are audited by an independent accounting firm annually.",
+          "Leadership compares financial statements with similar organizations to benchmark financial ratios and results."
+        ]
+      ]
+    },
+    {
+      "id": "budgeting",
+      "title": "Budgeting",
+      "category": "Finance and Accounting",
+      "stageDescriptions": [
+        [
+          "Budgets are not prepared and requests for funds are unsubstantiated and often unrealistic.",
+          "Expenditures are governed solely by funds on hand."
+        ],
+        [
+          "Project budgets are prepared by staff or founder but there is no program or organizational budgets.",
+          "Little or no attention is paid to budgets when choosing activities and spending the funds.",
+          "Project budgets are not consistently adhered to and it is common to run out of funds mid-project."
+        ],
+        [
+          "Project and program/organizational budgets are prepared by financial staff after consulting program staff.",
+          "Expenses are monitored against budgets, but no action is taken when potential problems are identified."
+        ],
+        [
+          "Budgets are prepared at an organizational level and at the project/program/grant level.",
+          "Budgets are based on good data and are generally realistic and achievable.",
+          "Expenses are closely monitored against these budgets and corrective action taken when problems arise.",
+          "A policy on financial reserves is in place.",
+          "The organization prepares multi-year budgets that align with their strategic plan."
+        ]
+      ]
+    },
+    {
+      "id": "cash-management",
+      "title": "Cash Management",
+      "category": "Finance and Accounting",
+      "stageDescriptions": [
+        [
+          "Leadership has no idea of how or why to predict cash flow needs.",
+          "Work is often stopped due to lack of funds on hand.",
+          "The need for reconciliations is not recognized and none are conducted.",
+          "The organization's funds are sometimes commingled with the founder's personal funds."
+        ],
+        [
+          "Cash-flow forecasting is not done and cash on hand is often too much or too little for needs.",
+          "Bank reconciliations are rarely conducted and often don't balance.",
+          "Bookkeeper or staff may issue petty cash, borrow money, and confuse petty cash with personal money."
+        ],
+        [
+          "The organization does some cash-flow forecasting and cash on-hand is generally consistent with needs.",
+          "Bank reconciliations are conducted but are not always completed timely.",
+          "There are a separation of duties within the accounting functions so the person reconciling the bank account is not the same person managing cash, issuing payments, and preparing deposits."
+        ],
+        [
+          "The organization does multi-year cash-flow forecasting and has an investment policy for excess cash on hand.",
+          "Bank reconciliations are completed timely on all accounts and are reviewed by someone other than the preparer.",
+          "There are internal controls over cash handling that are consistently enforced.",
+          "Organization engages in an external audit."
+        ]
+      ]
+    },
+    {
+      "id": "financial-reporting",
+      "title": "Financial Reporting",
+      "category": "Finance and Accounting",
+      "stageDescriptions": [
+        [
+          "Financial reports are only prepared when required by a donor or grantee and are often inaccurate.",
+          "No one in the organization clearly knows the financial situation.",
+          "There is no fiduciary oversight over the organization's finances."
+        ],
+        [
+          "Financial reports are prepared occasionally but reflect what is thought will satisfy a donor rather than the reality.",
+          "Reports are often late.",
+          "Organization generally only reports on revenues and expenses and does not prepare a Balance Sheet.",
+          "Financial reports often contain clerical errors.",
+          "Some reports are made available to the Governing Body, but not regularly and without explanations."
+        ],
+        [
+          "Financial statements are generally accurate but delivery can be late at times.",
+          "They split categories of revenue and expenses but sometimes the categories are too vague.",
+          "The organization prepares comparative (year over year) financial statements but prior period adjustments are common.",
+          "The Governing Body is provided financial statements but not on a set schedule.",
+          "Staff are only sometimes provided financial statements or informed about financial results."
+        ],
+        [
+          "Financial statements are generally accurate and issued timely.",
+          "The split of revenues and expenses provides detail and context to the reader.",
+          "Functional expenses are split between: program services, management & general, and fundraising.",
+          "The organization reports on the accrual basis of accounting and revenues and expenses are recognized in the correct fiscal year.",
+          "Financial statements are reviewed by management and the Governing Body and shared with staff.",
+          "The organization is audited by an independent accounting firm."
+        ]
+      ]
+    },
+    {
+      "id": "compensation-and-benefits",
+      "title": "Compensation and Benefits",
+      "category": "Human Resources",
+      "stageDescriptions": [
+        [
+          "The organization does not have a salary system in place.",
+          "Few opportunities for salary increases are provided.",
+          "Staff salaries and benefits are low enough that it leads to frequent turnover.",
+          "Leadership determines salaries based on their own subjective perspectives."
+        ],
+        [
+          "Staff salaries and benefits are below average in the sector.",
+          "Salary increases are only provided for a promotion.",
+          "The organization has a salary system which sets a mechanism to attach salaries to each position, but it is not shared with all staff."
+        ],
+        [
+          "Staff salaries and benefits are on par within the sector.",
+          "Salary increases are given on an ad-hoc basis, depending on budget availability."
+        ],
+        [
+          "The organization has a clear, fair, and transparent salary system which sets a mechanism to attach salaries to each position.",
+          "Staff salaries and benefits are competitive within the sector.",
+          "The salary system regulates benefits and pay rises over the years."
+        ]
+      ]
+    },
+    {
+      "id": "internal-communications-inclusivity",
+      "title": "Internal Communications & Inclusivity",
+      "category": "Human Resources",
+      "stageDescriptions": [
+        [
+          "Meetings of all staff do not occur or occur very rarely.",
+          "Few issues are discussed, and most information shared on a one-to-one basis."
+        ],
+        [
+          "Staff meetings occur occasionally but without a clear purpose or agenda.",
+          "Little or no participation from the staff.",
+          "Decisions are unclear or not followed up."
+        ],
+        [
+          "Staff meetings are held regularly with some staff participation but agenda items are usually determined by the Management.",
+          "Decisions often not recorded or followed up."
+        ],
+        [
+          "Regular staff meetings held with agenda items added by staff.",
+          "Good participation of all staff in discussions.",
+          "Decisions are clearly documented and consistently followed up."
+        ]
+      ]
+    },
+    {
+      "id": "new-staff-recruitment",
+      "title": "New Staff Recruitment",
+      "category": "Human Resources",
+      "stageDescriptions": [
+        [
+          "No set procedure for staff selection.",
+          "Recruitment is based on relationships (relatives or friends), not on commitment or skills.",
+          "New hire applications, interviews, offers, and acceptance rates demonstrate biases exist in the recruitment process."
+        ],
+        [
+          "There is no recruitment policy, or it is not used.",
+          "New positions are announced, and applicants interviewed.",
+          "Selection based on personal not professional attributes."
+        ],
+        [
+          "The organization has a clear recruitment procedure, which is generally followed.",
+          "Internal appointments do not follow agreed procedure."
+        ],
+        [
+          "A clear recruitment policy is developed and consistently followed for internal and external candidates.",
+          "All those responsible for recruitment are aware of the policy and put it to use.",
+          "The recruitment process is clearly defined, competitive and non-discriminatory.",
+          "New hire applications, interviews, offers, and acceptance rates demonstrate equal opportunities regardless of race and gender."
+        ]
+      ]
+    },
+    {
+      "id": "staff-capacity-professional-development",
+      "title": "Staff Capacity & Professional Development",
+      "category": "Human Resources",
+      "stageDescriptions": [
+        [
+          "Staff have had little or no training and lack the skills necessary to do their jobs.",
+          "No plans for staff development.",
+          "Knowledge is used as power over others.",
+          "Learning is rarely shared or put into practice.",
+          "Management do not tell staff what is expected of them and how they could work better.",
+          "No mechanism for reviewing work or staff performance.",
+          "Incentives/discipline at the sole discretion of leader."
+        ],
+        [
+          "Staff have some basic skills but not enough to perform their tasks satisfactorily.",
+          "Some learning is shared but actual changes in work practices are limited.",
+          "Supervision is concerned with control rather than support and learning.",
+          "Reviews and performance appraisals occur occasionally but staff experience these as highly threatening."
+        ],
+        [
+          "Good communication and facilitation skills exist but staff are weak on analysis and participatory problem solving.",
+          "Organization has strategy for staff development but lacks commitment or resources to implement.",
+          "Focus on learning through training courses.",
+          "Guidance and follow-up with staff is provided, sometimes hastily and inconsistently.",
+          "Follow-up on reviews & appraisals planned, but rarely implemented.",
+          "Little self reflection takes place."
+        ],
+        [
+          "Staff have a high level of skills to do their jobs and to assess and constantly improve their work.",
+          "High priority given to staff development in line with organizational needs.",
+          "There is a vision of individual potentials and future roles for staff.",
+          "Appropriate levels of advice and support are provided routinely.",
+          "Reviews are undertaken regularly, clearly linked to staff development and welcomed as a source of learning.",
+          "\"360\" reviews are done to provide feedback to managers as well.",
+          "Results of appraisals are used to inform management and staff."
+        ]
+      ]
+    },
+    {
+      "id": "team-equity",
+      "title": "Team Equity",
+      "category": "Human Resources",
+      "stageDescriptions": [
+        [
+          "There is no data related to salaries, pay adjustments, promotion opportunities, performance reviews, and attrition.",
+          "Employees feel that starting salaries, pay adjustments, promotion opportunities, performance reviews, and attrition rates reveal significant biases across different demographics.",
+          "There are no exit interviews conducted to determine reason for employees' departure and avoiding biases.",
+          "Leadership roles are often recruited for externally and do not reflect the demographics of the existing team or community of focus."
+        ],
+        [
+          "Only allegorical data exists related to salaries, pay adjustments, promotion opportunities, performance reviews, and attrition.",
+          "Employees' starting salaries, pay adjustments, promotion opportunities, performance reviews, and attrition rates reveal slight biases across different demographics, but being addressed proactively.",
+          "Exit interviews are conducted to determine reason for employees' departure, but results not shared transparently with organization's leadership.",
+          "Leadership roles are prioritized internally, but reveal biases for certain demographics."
+        ],
+        [
+          "Categorical data exists related to salaries, pay adjustments, promotion opportunities, performance reviews, and attrition.",
+          "Employees' starting salaries, pay adjustments, promotion opportunities, performance reviews, and attrition rates have reduced biases across different demographics.",
+          "Exit interviews are conducted to determine reason for employees' departure, and results are shared with leadership, but not proactively improved upon.",
+          "Leadership team represents well the diverse demographics of larger workforce."
+        ],
+        [
+          "There is full transparency about ratings of attrition, promotion, performance reviews, or payment reveal biases across different demographic groups.",
+          "Employees are receiving the same starting salary, pay adjustment policies, and pay reviews for the same work independent of their demographic background.",
+          "Exit interviews are conducted to determine reason for employees' departure and avoiding biases.",
+          "Leadership roles are often grown from within the existing team, and reflects the representation of the workforce."
+        ]
+      ]
+    },
+    {
+      "id": "team-well-being",
+      "title": "Team Well-Being",
+      "category": "Human Resources",
+      "stageDescriptions": [
+        [
+          "Staff are exposed to unsafe working conditions.",
+          "Staff frequently feel anxious, angry, gloomy, fatigued, and discouraged due to workplace conditions.",
+          "Staff do not receive enough income and benefits to pay normal monthly bills, nor health and well-being benefits.",
+          "Discrimination occurs in the workplace in relation to age, race or ethnic origin, gender."
+        ],
+        [
+          "Staff receive enough income and benefits to pay normal monthly bills, but limited benefits beyond payment."
+        ],
+        [
+          "Processes in place to ensure safe working conditions, and avoid work-related injuries, but mental health is not discussed in the workplace nor modeled by leadership.",
+          "Safe workplace, but demands of the job interfere with personal life.",
+          "There is a sense that staff never have enough time to get their job done.",
+          "Leadership tries to model healthy behaviors, but struggles to provide opportunities for team to engage in being physically active, eating a healthy diet, and managing stress.",
+          "Because of a physical, mental, or emotional condition, staff have difficulty concentrating, remembering, or making decisions."
+        ],
+        [
+          "Variety of benefits ranging from Health, Education, Retirement, Paid maternity, paternity, sick, bereavement, and disability leave, paid vacation days, and reliable transit options.",
+          "Leadership models and provides opportunities for team to engage in healthy behaviors, such as being physically active, eating a healthy diet, and managing stress.",
+          "Team feels sense of satisfaction with job security, wage, benefits, advancement opportunities, respect, purpose, inspiration, curiosity, enthusiasm, belonging, and trust."
+        ]
+      ]
+    },
+    {
+      "id": "terms-of-responsibility-job-descriptions",
+      "title": "Terms of Responsibility / Job Descriptions",
+      "category": "Human Resources",
+      "stageDescriptions": [
+        [
+          "No written job descriptions or they are not used.",
+          "Staff are unclear about their specific responsibilities."
+        ],
+        [
+          "Job descriptions exist but are outdated or incomplete.",
+          "Some understanding of roles and responsibilities but most are not clear.",
+          "Management is doing extra tasks to keep things going."
+        ],
+        [
+          "Job descriptions are written and adequate, but not kept up to date.",
+          "They are followed either rigidly (individuals refuse to do additional tasks) or inconsistently."
+        ],
+        [
+          "Job descriptions are clear and periodically updated.",
+          "They are followed consistently but staff readily take on additional responsibilities in response to changing circumstances and needs."
+        ]
+      ]
+    },
+    {
+      "id": "corporate-engagement",
+      "title": "Corporate Engagement",
+      "category": "Donor Engagement and Fundraising",
+      "stageDescriptions": [
+        [
+          "Organization does not currently receive any corporate support and is unsure of how to initially engage with corporate donors."
+        ],
+        [
+          "Organization receives a small amount of corporate support.",
+          "Some corporate supporters' activities are in opposition to organization's mission and/or could present an unacceptable ethical or reputational risk to organization that is greater than the achievable conservation benefits of the engagement."
+        ],
+        [
+          "Organization receives significant corporate support but lacks a clear policy, and thus must review each opportunity on a case-by-case basis."
+        ],
+        [
+          "Organization has a clear policy to only accepts funds from a corporation or its foundation when it does not compromise the organization's independence and objectivity.",
+          "All public communications regarding Corporate Engagements are subject to prior approval by organization and the corporation."
+        ]
+      ]
+    },
+    {
+      "id": "donor-influence-trust",
+      "title": "Donor Influence & Trust",
+      "category": "Donor Engagement and Fundraising",
+      "stageDescriptions": [
+        [
+          "Proposed projects and activities determined solely by donor priorities.",
+          "No understanding of the value in building relationships with donors.",
+          "Problems, mistakes and lack of capacity are hidden from funding partner."
+        ],
+        [
+          "Projects and organizational changes heavily influenced by donor requirements.",
+          "All contact with donors made by Leader or English speaking staff member.",
+          "Relationship mainly limited to exchanges of funds and reports."
+        ],
+        [
+          "Projects and organizational changes in line with needs of community and long-range plans of organization but influenced by donor priorities.",
+          "Management regularly contacts current and potential donors.",
+          "Advice proactively sought."
+        ],
+        [
+          "Program focus and organizational changes determined by organization, in consultation with funding partners.",
+          "Management and project staff regularly exchange ideas and information with funding partner.",
+          "Mistakes openly acknowledged."
+        ]
+      ]
+    },
+    {
+      "id": "donor-outreach-engagement",
+      "title": "Donor Outreach & Engagement",
+      "category": "Donor Engagement and Fundraising",
+      "stageDescriptions": [
+        [
+          "Organization has little or no idea of how to approach potential funding partners for support."
+        ],
+        [
+          "Organization lacks strategic approach to identifying and approaching possible funding partners.",
+          "Some knowledge of funding sources and donor criteria."
+        ],
+        [
+          "Organization targets relevant funding agencies on a project by project basis.",
+          "Regular project funding from several sources but no long-term partnerships."
+        ],
+        [
+          "Organization has secure long-term partnerships with multiple donors, allowing them to be more selective in choice of new funding partners and always seeks longer-term flexible support."
+        ]
+      ]
+    },
+    {
+      "id": "grant-writing",
+      "title": "Grant-Writing",
+      "category": "Donor Engagement and Fundraising",
+      "stageDescriptions": [
+        [
+          "No one can satisfactorily prepare a basic project proposal."
+        ],
+        [
+          "Leader can prepare a basic project proposal but usually with little or no input from staff."
+        ],
+        [
+          "Senior staff can prepare project proposals.",
+          "Governing Body members are involved in developing longer-term program plans."
+        ],
+        [
+          "Most staff can prepare basic project proposals and management is able to develop comprehensive program proposals."
+        ]
+      ]
+    },
+    {
+      "id": "communications-strategy",
+      "title": "Communications Strategy",
+      "category": "External Marketing and Communications",
+      "stageDescriptions": [
+        [
+          "There is no Marketing/Communications strategy in place.",
+          "The organization has little or no concept of developing a MarComms strategy and/or the need for such a strategy is not recognized as a priority."
+        ],
+        [
+          "A Marketing / Communications strategy has been set as a priority.",
+          "Target audiences are identified and organization has developed a plan to tailor messaging and tactics to those audiences.",
+          "The organization has evaluated the success of their current MarComms efforts and has started to identify goals."
+        ],
+        [
+          "Organization has developed Key Performance Indicators (KPIs) to use as a way to monitor their success."
+        ],
+        [
+          "Developed a comprehensive 1-3 year MarComms strategy that outlines the organization's approach, objectives, audiences, messaging, tactics, and channels.",
+          "(strategy is based on and woven into the organization's programmatic and fundraising strategies.) Targets for the next 1-3 years are added to the KPIs.",
+          "Organization has a created a budget for executing its strategy and a plan for which to resource their strategy (i.e. ensuring they have the right tools, expertise, time, money, and human-power with which to execute their strategy)."
+        ]
+      ]
+    },
+    {
+      "id": "digital-metrics",
+      "title": "Digital Metrics",
+      "category": "External Marketing and Communications",
+      "stageDescriptions": [
+        [
+          "Leadership is not sure what aspects of their communications and fundraising efforts should be tracked and analyzed to inform their strategy.",
+          "Systems are not tracking data.",
+          "There is no expertise on staff to set up or monitor digital metrics."
+        ],
+        [
+          "Some systems are in place to track metrics (website, email, social, etc.) and a handful of metrics are being reported to leadership.",
+          "There is not a clear understanding on how to incorporate metrics when setting strategies."
+        ],
+        [
+          "Systems are collecting data and staff has access to metrics.",
+          "Staff routinely checks these metrics and report to leadership to provide updates on campaigns and fundraising efforts."
+        ],
+        [
+          "Systems are collecting data and staff has access to metrics.",
+          "They understand how to analyze the metrics.",
+          "Leadership and staff have set up benchmarks that attach metrics to their strategic goals.",
+          "These benchmarks are updated frequently to track organizational progress.",
+          "Metrics are used to help guide strategy and decision making."
+        ]
+      ]
+    },
+    {
+      "id": "media-press-relationships",
+      "title": "Media & Press Relationships",
+      "category": "External Marketing and Communications",
+      "stageDescriptions": [
+        [
+          "Organization has not been able to steward much public press and is struggling to find pathways for exposure."
+        ],
+        [
+          "Organization publishes its own press releases, but has little traction among external press and media publications."
+        ],
+        [
+          "Organization has received some significant press coverage, but on an ad-hoc basis without strong contacts or consistent touch points."
+        ],
+        [
+          "Public Press and Media contacts are informed of the organization's latest goals, activities, and achievements on a regular basis.",
+          "The organization systematically informs and professionally engages with the Press and Media, and utilises the press and media for campaigns and advocacy."
+        ]
+      ]
+    },
+    {
+      "id": "social-media",
+      "title": "Social Media",
+      "category": "External Marketing and Communications",
+      "stageDescriptions": [
+        [
+          "Visual communication is unclear, i.e. images might be low resolution, or the intention/purpose of the images may not be consistent with the goals of the organization.",
+          "The organization has not yet created a social media presence, or has one that is not updated regularly."
+        ],
+        [
+          "Social media posting happens occasionally on at least one social media platform, but is behind on current updates about the organization's work.",
+          "Visual content is inconsistent in quality, formatting, and/or storytelling."
+        ],
+        [
+          "The organization uses social platform(s) to share new and current information and promote their work.",
+          "Posts are made on a semi-regular basis.",
+          "Visual content is consistent and is clearly topical to the organization's purpose, though not always high quality."
+        ],
+        [
+          "The organization maintains a social media presence with a clear voice across more than one platform.",
+          "They share content for communications, promotion and advocacy purposes, and engage with their following.",
+          "Posts are made very consistently, sharing current and topical information, and high quality visual content.",
+          "Posts vary between both video and photo content."
+        ]
+      ]
+    },
+    {
+      "id": "visual-branding",
+      "title": "Visual Branding",
+      "category": "External Marketing and Communications",
+      "stageDescriptions": [
+        [
+          "There are no established guidelines or systems in place for implementing the brand or ensuring its consistent implementation.",
+          "Brand is not defined or in the process of being formed."
+        ],
+        [
+          "Branding assets are developed (logos, colors, typography, or visual elements), but is inconsistent across all platforms.",
+          "Guidelines on how to incorporate branding in marketing efforts are in the process of being developed."
+        ],
+        [
+          "Brand is established and implemented/integrated across all platforms.",
+          "Brand is being used consistently and woven into the design process.",
+          "Brand guidelines are established, but not enforced."
+        ],
+        [
+          "The organization has a unique, robust and recognizable brand.",
+          "There is a clear set of brand guidelines in place that explain the use of the brand in detail.",
+          "There is a system in place to ensure the brand guidelines are closely followed."
+        ]
+      ]
+    },
+    {
+      "id": "website",
+      "title": "Website",
+      "category": "External Marketing and Communications",
+      "stageDescriptions": [
+        [
+          "Website content is not organized and is hard to navigate.",
+          "You often hear that donors can't find what they are looking for.",
+          "Technical issues are present, like slow load times, pixelated images, hard to read text (accessibility issues), etc.",
+          "There are no procedures for updating or reviewing site content."
+        ],
+        [
+          "There is a general framework for the website, but there is either too little or too much information.",
+          "The website design looks dated and a few technical issues are present.",
+          "Staff struggle to update content regularly, but procedures are in place."
+        ],
+        [
+          "Website content is clear and well organized, however the website does not have strategic calls-to-action.",
+          "The website design is up-to-date and few technical issues are present.",
+          "Staff update the content regularly, but there are occasional spelling or grammatical errors."
+        ],
+        [
+          "The website is easy to navigate and has all the key information a donor needs.",
+          "The site has a modern design, in-line with the organization's brand, and free of technical errors.",
+          "There are strong calls-to-actions to facilitate donations and email sign-ups.",
+          "The website is regularly updated with new and current information, the written content is free of errors."
+        ]
+      ]
+    },
+    {
+      "id": "written-publications",
+      "title": "Written Publications",
+      "category": "External Marketing and Communications",
+      "stageDescriptions": [
+        [
+          "The organization either does not produce any sort of written publications, or does not do so regularly enough to convey the latest updates about your work, your team, or the impact you're having for your focal species."
+        ],
+        [
+          "A newsletter or report of some kind does get sent out, but it's not on a consistent schedule.",
+          "This publication does not include the type of information your audience is most interested in, and it's delivered either in electronic or printed form, not both."
+        ],
+        [
+          "The publication is on a reliable schedule, is delivered electronically and in print, and includes noteworthy and engaging impact stats.",
+          "But it doesn't have any substantive stories, or if it does, the stories or other content contained in the publication is too long (to the point that it's likely no one will take the time to read it).",
+          "It may also be too word heavy, with not enough visuals/photos."
+        ],
+        [
+          "A concise and substantive publication is regularly produced by the organization.",
+          "It is a digestible length and the impact stats and stories within are easy to grasp.",
+          "This publication conveys the importance of your work in an impactful, story/data-driven, and visually appealing way, and is distributed to your audience in a variety of methods (per their designation digital or - print) at key times of the year."
+        ]
+      ]
+    },
+    {
+      "id": "documentation-record-keeping",
+      "title": "Documentation & Record Keeping",
+      "category": "Infrastructure and Equipment",
+      "stageDescriptions": [
+        [
+          "No systematic procedures for gathering information on program or organizational activities.",
+          "Communications are rarely recorded."
+        ],
+        [
+          "There are files and records, but they are not organised or maintained.",
+          "They tend to be treated as personal rather than organizational files."
+        ],
+        [
+          "Documents contain relevant information and are clear, but lack analysis.",
+          "Available internally and externally but often late and of limited use."
+        ],
+        [
+          "Comprehensive systems in place for collecting, using and disseminating information.",
+          "Filing system is well maintained.",
+          "Information is accessible and readily available to all staff."
+        ]
+      ]
+    },
+    {
+      "id": "equipment-procurement-asset-management",
+      "title": "Equipment Procurement & Asset Management",
+      "category": "Infrastructure and Equipment",
+      "stageDescriptions": [
+        [
+          "No procedures set up for purchasing goods and services.",
+          "Purchasing often done only by Leader.",
+          "No one maintains the assets of the organization.",
+          "Things are left broken and unusable."
+        ],
+        [
+          "Some purchasing procedures exist but are not practical and are often ignored by Management.",
+          "Maintenance of assets is done only when items are needed.",
+          "Items often not working properly."
+        ],
+        [
+          "Clear purchasing procedures are in place, and proper authorisation is obtained in most instances.",
+          "One person is responsible to maintain the assets, but this is not done routinely."
+        ],
+        [
+          "Procurement procedures in place and followed.",
+          "Proper quotations obtained for purchases over certain limit.",
+          "All items, including computers, are serviced regularly in accordance with a maintenance schedule."
+        ]
+      ]
+    },
+    {
+      "id": "facilities-transportation",
+      "title": "Facilities & Transportation",
+      "category": "Infrastructure and Equipment",
+      "stageDescriptions": [
+        [
+          "Facilities (office space, services, furniture, and equipment) are inadequate for organization's needs and are often privately owned.",
+          "Organization has no means of transport.",
+          "Staff use own transport or rent vehicles."
+        ],
+        [
+          "Basic facilities are available, but shortages cause ongoing frustration and inefficiencies.",
+          "Limited access to phones and email, making outside communication difficult.",
+          "Organization has some transport, but it is not reliable or sufficient."
+        ],
+        [
+          "Facilities are adequate but are often old and not maintained.",
+          "Computers are available but most staff do not and cannot use them.",
+          "Organization has sufficient means of transport for its needs, but could benefit from more."
+        ],
+        [
+          "Facilities are adequate to allow the organization to function efficiently.",
+          "Transport is adequate for current needs, well maintained and periodically replaced."
+        ]
+      ]
+    },
+    {
+      "id": "land-tenure",
+      "title": "Land Tenure",
+      "category": "Infrastructure and Equipment",
+      "stageDescriptions": [
+        [
+          "Organization does not currently have the capacity or legal infrastructure to purchase or manage land for their operations or conservation purposes."
+        ],
+        [
+          "Organization has legal ability to own land, but lacks the know-how to appropriately establish or manager long-term land tenure."
+        ],
+        [
+          "Organization has pursued land ownership, but needs improvement to ensure appropriate management or acquisition policies that ensure free, prior, and informed consent of all parties involved, with particular respect to the rights of Indigenous Peoples."
+        ],
+        [
+          "Organization has a track record of establishing or expanding conserved areas for biodiversity and human benefits.",
+          "Organization has put into practice free, prior, and informed consent (FPIC) policies to ensure that indigenous populations are adequately informed, properly consulted, and given the opportunity to fully participate in any land purchase negotiations, before they consent to the lease or purchase of their land, and to the implementation of a project to safeguard against communities or individuals being coerced, forced, intimidated, or pressured to sign agreements that unfairly disadvantage them."
+        ]
+      ]
+    },
+    {
+      "id": "accountability",
+      "title": "Accountability",
+      "category": "Commitment to People and Place",
+      "stageDescriptions": [
+        [
+          "Organization doesn't see any need to report on its activities to donors or communities and rarely does it.",
+          "Organization is not concerned about opinions or ideas of donors & communities."
+        ],
+        [
+          "Organization provides information on activities and expenditure to donors but not communities.",
+          "Information is kept to a minimum accepted.",
+          "Organization is concerned about pleasing donor/s but little attempt to listen to & respond to complaints of communities."
+        ],
+        [
+          "Information on activities and expenditure is regularly provided to donors but not to communities.",
+          "Reports may include problems/failures.",
+          "Various complaints mechanisms have been set up in communities but are not used or are not taken seriously by the organization."
+        ],
+        [
+          "Organization regularly provides information on activities to donors and communities in appropriate ways.",
+          "Mechanisms put in place to enable both donors and communities to sanction organization if work is unsatisfactory."
+        ]
+      ]
+    },
+    {
+      "id": "community-needs-assessment",
+      "title": "Community Needs Assessment",
+      "category": "Commitment to People and Place",
+      "stageDescriptions": [
+        [
+          "Community needs determined by organization staff with little or no input from Community.",
+          "Needs identification often reflects donor priorities.",
+          "No problem analysis undertaken.",
+          "Little understanding of power dynamics and specific needs of target group."
+        ],
+        [
+          "Needs and problem analysis undertaken with Governing Body but with no direct community consultation.",
+          "Good understanding and relationships established with target group members."
+        ],
+        [
+          "Needs and problem analysis undertaken regularly, with some involvement of target group.",
+          "Good understanding and relationships with most members of community."
+        ],
+        [
+          "Community, and particularly target group, actively involved in analysing own needs and problems."
+        ]
+      ]
+    },
+    {
+      "id": "long-term-sustainability",
+      "title": "Long-Term Sustainability",
+      "category": "Commitment to People and Place",
+      "stageDescriptions": [
+        [
+          "Activities are disparate, determined by donor priorities, and are carried out without a clear strategy or plan.",
+          "Activities are intended to deliver resources and services to community, to meet needs, but not rights and self-sustaining success."
+        ],
+        [
+          "Project objectives are set but determined by management, with little consideration to available resources among community members.",
+          "Activities include capacity building, but are primarily concerned with service or resource delivery.",
+          "Community's capacity is not valued."
+        ],
+        [
+          "Staff participate in deciding activities but little or no community involvement.",
+          "Interventions include clear community capacity building and advocacy components but are conceived of within a project framework."
+        ],
+        [
+          "Staff set realistic objectives, and community actively involved in determining and implementing activities.",
+          "Interventions are informed by a clear rights-based approach to development and recognise the mutual and systemic nature of change."
+        ]
+      ]
+    },
+    {
+      "id": "peer-networks",
+      "title": "Peer Networks",
+      "category": "Commitment to People and Place",
+      "stageDescriptions": [
+        [
+          "organization is not well known within community and not known at all outside.",
+          "Little or no contact with other agencies and government.",
+          "No interest or understanding of the role of advocacy in development work.",
+          "Has no knowledge of advocacy strategies."
+        ],
+        [
+          "Some contact with other agencies and/or government authorities in area.",
+          "Little or no collaboration on projects. organization is known in the area but not its activities or achievements.",
+          "Aware of the need for advocacy but is afraid of getting involved.",
+          "Avoids all contentious issues.",
+          "Advocacy strategies determined by limited knowledge of techniques."
+        ],
+        [
+          "Regularly attends coordination meetings and meets with local government authorities.",
+          "Occasionally initiates contact with others. organization has good reputation in district but is little known elsewhere.",
+          "Attends inter-agency meetings on some issues but doesn't participate actively.",
+          "Unclear stand on most issues.",
+          "Different strategies known but organization lacks the required skills and experience."
+        ],
+        [
+          "Actively participates in interagency coordination meetings at local and national levels.",
+          "Committed to cooperation and collaboration with others. organization is highly respected locally and is known in some national forums.",
+          "Actively participates in actions advocating change, in line with clearly articulated position on policy issues. organization is competent and effective in chosen fields of advocacy."
+        ]
+      ]
+    },
+    {
+      "id": "target-groups-constituents",
+      "title": "Target Groups & Constituents",
+      "category": "Commitment to People and Place",
+      "stageDescriptions": [
+        [
+          "Program activities are not coherent and do not support ongoing relationships with any particular community groups.",
+          "Little or no involvement of community, especially target group members, in any stages of the work.",
+          "No thought given to gender issues or other marginalised groups in design and implementation of activities."
+        ],
+        [
+          "Program activities are only loosely connected to the needs of this target group and actual beneficiaries are still inconsistent with target group.",
+          "Participation of target group limited to implementation phase and amounts to doing what the organization wants and/or providing contributions.",
+          "Organization claims to address gender and diversity issues, but this is not reflected in their ways of working or the profile of their beneficiaries."
+        ],
+        [
+          "Target group needs are identified, but some activities may still be inappropriate or actual beneficiaries may vary from the intended target.",
+          "Target group involved in minor decisions related to design and implementation of activities, but no consideration given to participant dynamics.",
+          "Participation of women and marginalised groups is actively sought but no clear strategies for addressing discrimination."
+        ],
+        [
+          "Organization is constantly and consciously refining program activities to more effectively address the needs of their beneficiaries.",
+          "Active interest & participation from communities in the make-up of committees and operations of organization.",
+          "Target group actively involved in decision-making and execution of intervention.",
+          "Special effort made to include marginalised individuals."
+        ]
+      ]
+    }
+  ]
+}

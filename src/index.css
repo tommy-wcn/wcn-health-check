@@ -2,16 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --planting: #c4a77d;
-  --seedling: #e8a849;
-  --growing: #d4873b;
-  --harvesting: #c66b27;
-}
-
 body {
   @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 @keyframes pulse-glow {
@@ -25,13 +18,17 @@ body {
 }
 
 .stage-card {
-  @apply relative overflow-hidden rounded-2xl p-6 cursor-pointer transition-all duration-300;
+  @apply relative overflow-hidden rounded-2xl p-6 w-full text-left cursor-pointer transition-all duration-300;
   @apply border-2 border-transparent;
 }
 
 .stage-card:hover {
   @apply scale-105;
   animation: float 2s ease-in-out infinite;
+}
+
+.stage-card:focus-visible {
+  @apply outline-none ring-2 ring-white ring-offset-2 ring-offset-slate-900;
 }
 
 .stage-card.selected {
@@ -55,5 +52,11 @@ body {
 
 .progress-fill {
   @apply h-full rounded-full transition-all duration-500 ease-out;
-  background: linear-gradient(90deg, var(--planting), var(--seedling), var(--growing), var(--harvesting));
+  background: linear-gradient(
+    90deg,
+    theme('colors.stage.planting'),
+    theme('colors.stage.seedling'),
+    theme('colors.stage.growing'),
+    theme('colors.stage.harvesting')
+  );
 }
