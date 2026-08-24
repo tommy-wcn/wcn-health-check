@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GrowingTree } from './GrowingTree'
 import { translations, languages, type Language } from './i18n'
-import { loadContent, loadPartnerOrgs, plantIcon, type Category } from './data/content'
+import { loadContent, loadPartnerOrgs, loadSiteText, plantIcon, youtubeEmbedUrl, type Category } from './data/content'
 import { supabase } from './lib/supabase'
 
 const stageStyles = [
@@ -27,11 +27,14 @@ function App() {
   const [formEmail, setFormEmail] = useState('')
   const [formOrg, setFormOrg] = useState('')
 
+  const [siteText, setSiteText] = useState<Record<string, string>>({})
+
   useEffect(() => {
-    Promise.all([loadContent(), loadPartnerOrgs()])
-      .then(([cats, orgs]) => {
+    Promise.all([loadContent(), loadPartnerOrgs(), loadSiteText()])
+      .then(([cats, orgs, texts]) => {
         setContent(cats)
         setPartnerOrgs(orgs)
+        setSiteText(texts)
       })
       .catch((err) => {
         console.error(err)
@@ -64,6 +67,7 @@ function App() {
   const maxCategoryScore = totalQuestions * 4
   const categoryScorePercent = Math.round((categoryScore / maxCategoryScore) * 100)
   const allAnsweredInCategory = answeredInCategory === totalQuestions
+  const categoryVideos = category.questions.filter((q) => q.videoGuide)
 
   const totalAnswered = Object.keys(answers).length
   const overallProgress = Math.round((totalAnswered / TOTAL_QUESTIONS) * 100)
@@ -170,13 +174,23 @@ function App() {
         /* Welcome landing */
         <div className="max-w-xl mx-auto mt-6">
           <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50">
-            <div className="text-center mb-6">
-              <div className="text-4xl mb-3" aria-hidden="true">🌱</div>
-              <h2 className="text-2xl font-bold text-white mb-2">Welcome</h2>
-              <p className="text-slate-400 text-sm">
-                This health check helps your organization reflect on its maturity across {CATEGORIES.length} key
-                dimensions. Tell us who you are to get started — responses are shared only with WCN staff.
-              </p>
+            <div className="mb-6">
+              <div className="text-center">
+                <div className="text-4xl mb-3" aria-hidden="true">🌱</div>
+                <h2 className="text-2xl font-bold text-white mb-3">Welcome</h2>
+              </div>
+              {siteText['landing-page-introduction'] ? (
+                <div className="space-y-3">
+                  {siteText['landing-page-introduction'].split(/\n+/).map((paragraph, i) => (
+                    <p key={i} className="text-slate-400 text-sm leading-relaxed">{paragraph}</p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-400 text-sm text-center">
+                  This health check helps your organization reflect on its maturity across {CATEGORIES.length} key
+                  dimensions. Tell us who you are to get started — responses are shared only with WCN staff.
+                </p>
+              )}
             </div>
             <label htmlFor="welcome-name" className="block text-xs text-slate-400 mb-1">Your name</label>
             <input
@@ -244,6 +258,39 @@ function App() {
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500" style={{ width: `${categoryProgress}%` }}></div>
             </div>
           </div>
+
+          {categoryVideos.length > 0 && (
+            <div className="bg-slate-900/60 backdrop-blur-xl px-4 pb-4 border-x border-slate-700/50 border-b border-slate-700/30">
+              <div className={`grid gap-3 ${categoryVideos.length > 1 ? 'md:grid-cols-2' : ''}`}>
+                {categoryVideos.map((q) => {
+                  const embedUrl = youtubeEmbedUrl(q.videoGuide!)
+                  return (
+                    <div key={q.id}>
+                      <div className="flex items-center gap-1.5 mb-1.5 text-xs font-semibold text-slate-300">
+                        <span>🎬</span>
+                        <span>{q.title}</span>
+                      </div>
+                      {embedUrl ? (
+                        <div className="relative w-full rounded-xl overflow-hidden border border-slate-700/50" style={{ paddingBottom: '56.25%' }}>
+                          <iframe
+                            src={embedUrl}
+                            title={q.title}
+                            className="absolute inset-0 w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : (
+                        <a href={q.videoGuide!} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 underline break-all">
+                          {q.videoGuide}
+                        </a>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-0">
             {category.questions.map((question, qIdx) => {
