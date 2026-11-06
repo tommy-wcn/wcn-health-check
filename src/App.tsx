@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { jsPDF } from 'jspdf'
 import { GrowingTree } from './GrowingTree'
 import { translations, languages, type Language } from './i18n'
 import { loadContent, loadPartnerOrgs, loadSiteText, plantIcon, youtubeEmbedUrl, type Category } from './data/content'
@@ -42,6 +43,8 @@ function App() {
   const [lang, setLang] = useState<Language>('en')
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
   const [submitState, setSubmitState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
+  const [showMissing, setShowMissing] = useState(false)
+  const missingNoticeRef = useRef<HTMLDivElement>(null)
   const [content, setContent] = useState<Category[] | null>(null)
   const [partnerOrgs, setPartnerOrgs] = useState<string[]>([])
   const [contentError, setContentError] = useState(false)
@@ -61,6 +64,12 @@ function App() {
       JSON.stringify({ respondent, answers, notes, currentCategory, lang, savedAt: new Date().toISOString() }),
     )
   }, [respondent, answers, notes, currentCategory, lang, submitState])
+
+  // Scroll after the new category has rendered — scrolling before the swap
+  // gets cancelled by the layout change.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentCategory])
 
   const resumeProgress = () => {
     if (!savedProgress || !content) return
@@ -124,8 +133,22 @@ function App() {
     setAnswers({ ...answers, [questionId]: level })
   }
 
+  const goToCategory = (index: number) => {
+    setCurrentCategory(index)
+  }
+
+  // Questions skipped anywhere in the form, in display order.
+  const missingQuestions = CATEGORIES.flatMap((cat, catIdx) =>
+    cat.questions.filter((q) => !answers[q.id]).map((q) => ({ category: cat, categoryIndex: catIdx, question: q })),
+  )
+
   const handleSubmit = async () => {
     if (!respondent) return
+    if (missingQuestions.length > 0) {
+      setShowMissing(true)
+      setTimeout(() => missingNoticeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+      return
+    }
     setSubmitState('saving')
     const submissionId = crypto.randomUUID()
     const { error: submissionError } = await supabase
@@ -154,8 +177,66 @@ function App() {
       setSubmitState('error')
       return
     }
+    // Fire-and-forget: email delivery problems shouldn't block the thank-you screen.
+    supabase.functions.invoke('notify-submission', { body: { submissionId } }).catch(console.error)
     localStorage.removeItem(STORAGE_KEY)
     setSubmitState('done')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const downloadPdf = () => {
+    if (!respondent) return
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' })
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 54
+    const maxWidth = pageWidth - margin * 2
+    let y = margin
+
+    const ensureRoom = (needed: number) => {
+      if (y + needed > pageHeight - margin) {
+        doc.addPage()
+        y = margin
+      }
+    }
+    const writeLines = (text: string, size: number, style: 'normal' | 'bold' | 'italic', color: [number, number, number], extraGap = 0) => {
+      doc.setFont('helvetica', style)
+      doc.setFontSize(size)
+      doc.setTextColor(...color)
+      const lines = doc.splitTextToSize(text, maxWidth) as string[]
+      const lineHeight = size * 1.35
+      for (const line of lines) {
+        ensureRoom(lineHeight)
+        doc.text(line, margin, y)
+        y += lineHeight
+      }
+      y += extraGap
+    }
+
+    writeLines("WCN Organizational Health Check — Your Responses", 16, 'bold', [15, 118, 110], 4)
+    writeLines(
+      `${respondent.name} (${respondent.email}) — ${respondent.org}\nSubmitted ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+      10, 'normal', [100, 116, 139], 14,
+    )
+
+    for (const cat of CATEGORIES) {
+      const catScore = cat.questions.reduce((sum, q) => sum + (answers[q.id] || 0), 0)
+      const catPercent = Math.round((catScore / (cat.questions.length * 4)) * 100)
+      ensureRoom(40)
+      writeLines(`${cat.name} — ${catPercent}%`, 13, 'bold', [30, 41, 59], 2)
+      for (const q of cat.questions) {
+        const level = answers[q.id]
+        const stage = level ? t.stages[level - 1].name : 'Not answered'
+        writeLines(q.title, 10, 'bold', [51, 65, 85])
+        writeLines(`Stage: ${stage}${level ? ` (${level}/4)` : ''}`, 10, 'normal', [15, 118, 110])
+        const note = notes[q.id]?.trim()
+        if (note) writeLines(`Note: ${note}`, 9, 'italic', [100, 116, 139])
+        y += 6
+      }
+      y += 8
+    }
+
+    doc.save('WCN-Health-Check-Responses.pdf')
   }
 
   return (
@@ -196,7 +277,7 @@ function App() {
           <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight mb-2">
             {t.title} <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">{t.subtitle}</span>
           </h1>
-          {respondent && (<>
+          {respondent && submitState !== 'done' && (<>
           <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mb-3">
             <span>{t.overall}: {overallProgress}% ({totalAnswered}/{TOTAL_QUESTIONS})</span>
             <div className="w-32 h-1.5 rounded-full bg-slate-800 overflow-hidden">
@@ -312,7 +393,28 @@ function App() {
         </div>
         )}
 
-        {respondent && (<>
+        {respondent && submitState === 'done' && (
+        /* Thank-you landing */
+        <div className="max-w-xl mx-auto mt-10">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 text-center">
+            <div className="text-5xl mb-4" aria-hidden="true">🌳</div>
+            <h2 className="text-2xl font-bold text-white mb-4">Thank you for submitting WCN's Organizational Health Check.</h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-6">
+              The WCN team will analyze the results and do our best to support your team to improve in areas
+              you've prioritized. For now, you can download a PDF copy of your personal responses here for your
+              records. Thank you!
+            </p>
+            <button
+              onClick={downloadPdf}
+              className="w-full py-3 rounded-xl text-sm font-medium bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-[1.02] transition-all"
+            >
+              ⬇ Download a PDF of my responses
+            </button>
+          </div>
+        </div>
+        )}
+
+        {respondent && submitState !== 'done' && (<>
         {/* Category */}
         <div className="max-w-5xl mx-auto">
           <div className="bg-slate-900/60 backdrop-blur-xl rounded-t-2xl p-4 border border-slate-700/50 border-b-0">
@@ -421,42 +523,53 @@ function App() {
           </div>
 
           <div className="flex justify-between mt-4">
-            <button onClick={() => setCurrentCategory(Math.max(0, currentCategory - 1))} disabled={currentCategory === 0} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${currentCategory === 0 ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/50'}`}>{t.previous}</button>
-            <button onClick={() => setCurrentCategory(Math.min(CATEGORIES.length - 1, currentCategory + 1))} disabled={currentCategory === CATEGORIES.length - 1} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${currentCategory === CATEGORIES.length - 1 ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'}`}>{t.next}</button>
+            <button onClick={() => goToCategory(Math.max(0, currentCategory - 1))} disabled={currentCategory === 0} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${currentCategory === 0 ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/50'}`}>{t.previous}</button>
+            <button onClick={() => goToCategory(Math.min(CATEGORIES.length - 1, currentCategory + 1))} disabled={currentCategory === CATEGORIES.length - 1} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${currentCategory === CATEGORIES.length - 1 ? 'bg-slate-800/40 text-slate-600 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'}`}>{t.next}</button>
           </div>
         </div>
 
         {/* Submit */}
         <div className="max-w-5xl mx-auto mt-6">
           <div className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-5 border border-slate-700/50">
-            {submitState === 'done' ? (
-              <div className="text-center py-2">
-                <div className="text-3xl mb-2">🌳</div>
-                <p className="text-emerald-400 font-semibold">Thank you! Your health check has been submitted.</p>
-                <p className="text-slate-400 text-sm mt-1">{respondent.org} — {totalAnswered}/{TOTAL_QUESTIONS} questions answered</p>
-              </div>
-            ) : (
-              <div className="flex flex-col md:flex-row md:items-center gap-3">
-                <div className="flex-1 text-sm text-slate-400">
-                  Submitting as <span className="text-white">{respondent.name}</span> ({respondent.email}) —{' '}
-                  <span className="text-white">{respondent.org}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  {submitState === 'error' && <span className="text-red-400 text-xs">Something went wrong — please try again.</span>}
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitState === 'saving' || totalAnswered === 0}
-                    className={`px-6 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                      submitState !== 'saving' && totalAnswered > 0
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'
-                        : 'bg-slate-800/40 text-slate-600 cursor-not-allowed'
-                    }`}
-                  >
-                    {submitState === 'saving' ? 'Submitting…' : `Submit (${totalAnswered}/${TOTAL_QUESTIONS} answered)`}
-                  </button>
-                </div>
+            {showMissing && missingQuestions.length > 0 && (
+              <div ref={missingNoticeRef} className="mb-4 rounded-xl bg-amber-500/10 border border-amber-500/30 p-4">
+                <p className="text-amber-400 text-sm font-semibold mb-2">
+                  Please answer {missingQuestions.length === 1 ? 'this question' : `these ${missingQuestions.length} questions`} before submitting:
+                </p>
+                <ul className="space-y-1">
+                  {missingQuestions.map(({ category: cat, categoryIndex, question }) => (
+                    <li key={question.id}>
+                      <button
+                        onClick={() => goToCategory(categoryIndex)}
+                        className="text-left text-xs text-amber-300/90 hover:text-amber-200 underline underline-offset-2"
+                      >
+                        {cat.icon} {cat.name} — {question.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <div className="flex-1 text-sm text-slate-400">
+                Submitting as <span className="text-white">{respondent.name}</span> ({respondent.email}) —{' '}
+                <span className="text-white">{respondent.org}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                {submitState === 'error' && <span className="text-red-400 text-xs">Something went wrong — please try again.</span>}
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitState === 'saving'}
+                  className={`px-6 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                    submitState !== 'saving' && totalAnswered === TOTAL_QUESTIONS
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:scale-105'
+                      : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
+                  }`}
+                >
+                  {submitState === 'saving' ? 'Submitting…' : `Submit (${totalAnswered}/${TOTAL_QUESTIONS} answered)`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         </>)}

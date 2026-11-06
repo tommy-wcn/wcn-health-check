@@ -18,6 +18,8 @@ const TEXT_TABLE_ID = 'tblnEU2vHN6VUI75P'
 const TEXT_FIELDS = { name: 'Name', text: 'Text' }
 const META_TABLE_ID = 'tbl8blE4tIr2iGEOU'
 const META_FIELDS = { name: 'Name', introText: 'Intro Text', video: 'Video Overview' }
+const ADMINS_TABLE_ID = 'tblP2eBvLc1yYtkeo'
+const ADMIN_FIELDS = { name: 'Name', email: 'Email' }
 
 const FIELDS = {
   topic: 'Topic',
@@ -69,6 +71,14 @@ const partners = partnerRecords
   .map((r) => r.fields[PARTNER_NAME_FIELD])
   .filter(Boolean)
   .sort((a, b) => a.localeCompare(b))
+
+const adminRecords = await fetchAllRecords(ADMINS_TABLE_ID)
+const admins = adminRecords
+  .filter((r) => r.fields[ADMIN_FIELDS.email])
+  .map((r) => ({
+    email: r.fields[ADMIN_FIELDS.email].trim(),
+    name: r.fields[ADMIN_FIELDS.name]?.trim() || null,
+  }))
 
 const textRecords = await fetchAllRecords(TEXT_TABLE_ID)
 const texts = textRecords
@@ -129,6 +139,13 @@ try {
       slugify(name), name, pos,
     ])
   }
+  await client.query('delete from notification_admins')
+  for (const [pos, a] of admins.entries()) {
+    await client.query(
+      'insert into notification_admins (id, name, email, position) values ($1, $2, $3, $4)',
+      [slugify(a.email), a.name, a.email, pos],
+    )
+  }
   await client.query('delete from content_text')
   for (const t of texts) {
     await client.query('insert into content_text (key, value) values ($1, $2)', [t.key, t.value])
@@ -140,4 +157,4 @@ try {
 } finally {
   await client.end()
 }
-console.log(`Synced ${questions.length} questions in ${categoryNames.length} categories, ${partners.length} partner organizations, and ${texts.length} text entries to Supabase`)
+console.log(`Synced ${questions.length} questions in ${categoryNames.length} categories, ${partners.length} partner organizations, ${admins.length} notification admins, and ${texts.length} text entries to Supabase`)

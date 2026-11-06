@@ -2,8 +2,8 @@
 // content tables. Invoked by the admin dashboard's "Sync from Airtable"
 // button; only signed-in staff may trigger it.
 //
-// Deploy:  npx supabase functions deploy sync-airtable --project-ref <ref>
-// Secrets: npx supabase secrets set AIRTABLE_TOKEN=pat... --project-ref <ref>
+// Deploy:  npx supabase functions deploy sync-airtable --remote=<ref>
+// Secrets: npx supabase secrets set AIRTABLE_TOKEN=pat... --remote=<ref>
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const BASE_ID = 'apphdPdSXAihErhnR'
@@ -14,6 +14,8 @@ const TEXT_TABLE_ID = 'tblnEU2vHN6VUI75P'
 const TEXT_FIELDS = { name: 'Name', text: 'Text' }
 const META_TABLE_ID = 'tbl8blE4tIr2iGEOU'
 const META_FIELDS = { name: 'Name', introText: 'Intro Text', video: 'Video Overview' }
+const ADMINS_TABLE_ID = 'tblP2eBvLc1yYtkeo'
+const ADMIN_FIELDS = { name: 'Name', email: 'Email' }
 
 const FIELDS = {
   topic: 'Topic',
@@ -85,6 +87,14 @@ Deno.serve(async (req) => {
       .map((r) => r.fields[PARTNER_NAME_FIELD] as string)
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b))
+
+    const adminRecords = await fetchAllRecords(airtableToken, ADMINS_TABLE_ID)
+    const admins = adminRecords
+      .filter((r) => r.fields[ADMIN_FIELDS.email])
+      .map((r) => ({
+        email: (r.fields[ADMIN_FIELDS.email] as string).trim(),
+        name: (r.fields[ADMIN_FIELDS.name] as string | undefined)?.trim() || null,
+      }))
 
     const textRecords = await fetchAllRecords(airtableToken, TEXT_TABLE_ID)
     const texts = textRecords
@@ -163,6 +173,15 @@ Deno.serve(async (req) => {
     )
     if (pInsert.error) throw pInsert.error
 
+    const aDel = await admin.from('notification_admins').delete().neq('id', '')
+    if (aDel.error) throw aDel.error
+    if (admins.length > 0) {
+      const aInsert = await admin.from('notification_admins').insert(
+        admins.map((a, position) => ({ id: slugify(a.email), name: a.name, email: a.email, position })),
+      )
+      if (aInsert.error) throw aInsert.error
+    }
+
     const tDel = await admin.from('content_text').delete().neq('key', '')
     if (tDel.error) throw tDel.error
     if (texts.length > 0) {
@@ -170,7 +189,7 @@ Deno.serve(async (req) => {
       if (tInsert.error) throw tInsert.error
     }
 
-    return json({ ok: true, categories: categoryNames.length, questions: questions.length, partners: partners.length, texts: texts.length })
+    return json({ ok: true, categories: categoryNames.length, questions: questions.length, partners: partners.length, admins: admins.length, texts: texts.length })
   } catch (err) {
     console.error(err)
     return json({ error: err instanceof Error ? err.message : String(err) }, 500)
